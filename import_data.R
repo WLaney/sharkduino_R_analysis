@@ -1,5 +1,9 @@
-import_data<-function(data_file){
-	#import data file and creat accel, gyro, date_time, temp, and pressure arrays
+import_data<-function(data_file, save_data=TRUE){
+	#import data file and creat two dataframes, one with enviromental data and one with
+	#movment data. These data frames are saved to a file and outputed together in a list
+	#
+	#A function paramter named save_data is default True, if False data will not be saved.
+	#This is a developent tool, you want to save the data because it is slow to import
 	raw_data<-read.csv(data_file, header=TRUE, sep=",") #import data
 
 	#creat seprate data frames for accel, gyro, data/time, pressure, and temp
@@ -11,10 +15,9 @@ import_data<-function(data_file){
 	pressure<-raw_data["pressure"]
 	rm(raw_data) #remove raw data to save memory
 
-	#Datetime interpolation
 	#remove \t from date time data and convert to times
 	date_time<-gsub("\t"," ", date_time, fixed=T)
-	date_time<-strptime(date_time, format="%F %T") #times exptected in ISO 8691 fromate
+	date_time<-strptime(date_time, format="%F %T") #times exptected in ISO 8691 formate
 
 	#interpolate the data time between RTC writes
 	inds<-which(!is.na(date_time)) #find index of date/time values
@@ -36,12 +39,10 @@ import_data<-function(data_file){
 
 
 	data_end<-!is.na(date_time) #find the data without times
-	
 	#we should not have to remove very many data points, if we do there is
 	#probably a problem with the data
-	max_data_removal=200
-	print(length(data_end))
-	if (length(data_end)>max_data_removal){
+	max_data_removal=200 #how much data is to much, I made this number up
+	if (sum(data_end)<(length(data_end)-max_data_removal)){
 		print(" There is more data without a closing time then expected. 
 		Please double check the datafile for problems")
 	}
@@ -56,8 +57,11 @@ import_data<-function(data_file){
 	accel<-accel[not_data,]
 	gyro<-gyro[not_data,]
 	date_time<-date_time[not_data]
-
-	movement_data<-data.frame(accel, gyro, date_time)
-	save(movement_data, enivroment_data, file="importated.RData")
-	return(list(movement_data, enivroment_data))
+	
+	#save and return data
+	if (save_data==T){
+		movement_data<-data.frame(accel, gyro, date_time)
+		save(movement_data, enivroment_data, file="importated.RData")
+		return(list(movement_data, enivroment_data))
+	}
 }
