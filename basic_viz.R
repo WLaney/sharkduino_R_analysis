@@ -25,7 +25,7 @@ ssres = 50
 # dataset?
 ds = 1
 # plot with ggplot2
-qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), alpha = 0.25)# + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
+qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), alpha = 0.25) # + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
 
 ## Aggregates -- not useful right now
 #aggData = aggregate(data[1:6], list(myDates), mean)
@@ -51,10 +51,14 @@ filtFreq = 0.5 # HPF freq in Hz
 
 # 3rd order Butterworth HPF
 myHPF = butter(type="high", 3, filtFreq/(25/ssres))
-#filter data
+# Filter data. A HPF cuts out the high-energy LF data, making 
+# subtleties in the higher frequencies easier to discern.
 filtdat = filter(myHPF, subsample(data[[ds]][dataRange],ssres))
+# Smooth data. This helps reduce noise in the upcoming spectrogram.
+# The tradeoff is that spikes become harder to see.
+filtdat = smooth(filtdat)
 
-## Filtered spectrogram using signal's "specgram"
+## Filtered, smoothed spectrogram using signal's "specgram"
 # This uses data from the previous step
 # plot spectrogram. n = window size, Fs = sampling rate
 plot(specgram(filtdat, n=512, Fs = 25/ssres), col=inferno(512), ylim=c(0,10))
