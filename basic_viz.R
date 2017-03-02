@@ -19,13 +19,13 @@ subsample = function(obj, ssres=1) {
 
 ## Simple scatterplot of one axis
 # Which points to plot?
-dataRange = 1:800000
+dataRange = 360000:370000
 # subsampling resolution?
-ssres = 50
+ssres = 5
 # dataset?
-ds = 1
+ds = 3
 # plot with ggplot2
-qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), alpha = 0.25) # + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
+qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), geom="line") +labs(x="Time", y="Accelerometer Z-Axis (Gs)", title="Accelerometer Z Data for 07/28 Dataset (Sub-sampling: 1/5)")# + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
 
 ## Aggregates -- not useful right now
 #aggData = aggregate(data[1:6], list(myDates), mean)
@@ -39,9 +39,10 @@ ds = 3
 # Generate PSD. x.frqsamp = sampling rate
 myps = pspectrum(subsample(data[[ds]][dataRange],ssres), x.frqsamp = 25/ssres)
 # Plot with ggplot2
-qplot(myps$freq, myps$spec, geom="line") + scale_y_log10() + annotation_logticks(sides="l")
+qplot(myps$freq, myps$spec, geom="line") + scale_x_log10() +scale_y_log10() + annotation_logticks(sides="l") +
+      labs(x="Frequency (log10(Hz))", y="Spectrum", title="Power Spctrum Distribution for 7-28 Dataset")
 # Plot with R's default plotter
-# plot(myps)
+ plot(myps)
 
 ## Filtering with signal
 dataRange = 330000:530000 
@@ -61,7 +62,7 @@ filtdat = smooth(filtdat)
 ## Filtered, smoothed spectrogram using signal's "specgram"
 # This uses data from the previous step
 # plot spectrogram. n = window size, Fs = sampling rate
-plot(specgram(filtdat, n=512, Fs = 25/ssres), col=inferno(512), ylim=c(0,10))
+plot(specgram(filtdat, n=512, Fs = 25/ssres), col=inferno(512), ylim=c(0,10), main="Spectrogram of Filtered, Smoothed Data \n (07-28, Accel. Z, HPF 0.5Hz)")
 
 ## Spectrogram using seewave
 dataRange = 330000:730000 # shark data window for the 07/28 dataset
