@@ -5,8 +5,9 @@ require("ggplot2") # for pretty plots
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
 
-# Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
-head.data = fread("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
+# Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
+# then edit the following line to reference it.
+head.data = fread("data/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
 # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
 head.data[, date_time := fastPOSIXct(head.data[, date_time])] 
 
@@ -105,5 +106,5 @@ plotPanel = plot_grid(
 
 #dev.off()
 
-save_plot(filename, plotPanel, ncol=1, nrow=6, base_aspect_ratio = 2, base_height = 3)
+save_plot(paste("plots/", filename, sep = ""), plotPanel, ncol=1, nrow=6, base_aspect_ratio = 2, base_height = 3)
 

@@ -5,8 +5,9 @@ require("signal") # signal processing toolkit w/filters, etc
 require("seewave") # time wave visualization (spectrograms!)
 require("viridis") # viridis color palettes
 
-# Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
-data = read.csv("/Users/Centigonal/Sharkduino/animal_tag_analysis/importers/out.csv")
+# Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
+# then edit the following line to reference it.
+data = read.csv("data/out.csv")
 # dates as POSIXct date objects
 myDates = as.POSIXct(data[[7]], format = "%Y-%m-%d %H:%M:%OS")
 
