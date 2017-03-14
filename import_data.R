@@ -1,4 +1,7 @@
 import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
+  require("data.table")
+  require("fasttime")
+  
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
   # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
@@ -8,6 +11,10 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
   raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
   # delete time-only rows
   interp.data = raw.data[!is.na(ax)]
+  if (nrow(raw.data[is.na(date_time)]) > 50) print("WARNING: Unexpected number of rows with missing dates")
+  # delete rows with no valid date interp.
+  interp.data = raw.data[!is.na(date_time)]
+  
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
   # separate files for them.
   pos.data = interp.data[,1:7]
