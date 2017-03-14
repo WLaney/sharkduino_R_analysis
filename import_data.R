@@ -13,7 +13,7 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
   interp.data = raw.data[!is.na(ax)]
   if (nrow(raw.data[is.na(date_time)]) > 50) print("WARNING: Unexpected number of rows with missing dates")
   # delete rows with no valid date interp.
-  interp.data = raw.data[!is.na(date_time)]
+  interp.data = interp.data[!is.na(date_time)]
   
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
   # separate files for them.
