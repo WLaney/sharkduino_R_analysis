@@ -12,7 +12,9 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
   # separate files for them.
   pos.data = interp.data[,1:7]
   
-  filename = paste("Interp_pos_", gsub(" ", "", Sys.time()), sep = "")
+  split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
+  
+  filename = paste(strsplit(split_path(data_file)[1], "[.]")[[1]][1], "_interp_pos", sep = "")
   
   if (save_csv == TRUE) {
     fwrite(pos.data, file = paste(filename, ".csv", sep = ""))
