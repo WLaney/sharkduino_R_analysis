@@ -12,7 +12,7 @@ require("cowplot") # for arranging plots in grids
 
 
 # Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
-head.data = fread("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
+head.data = fread("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/data/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
 # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
 head.data[, date_time := fastPOSIXct(head.data[, date_time])] 
 # Dataset Name, for pretty titles
@@ -90,6 +90,9 @@ ui <- fluidPage(
     plotOutput("sharkPlot", height="450px")
   ),
   fluidRow(
+    plotOutput("sharkPlot2", height="450px")
+  ),
+  fluidRow(
     column(2, offset = 1,
            selectInput("ds", "Data Series:",
                        c("Accelerometer X" = 1,
@@ -157,6 +160,13 @@ ui <- fluidPage(
     
     output$sharkPlot <- renderPlot({
       makeScatterPane(ds = as.numeric(input$ds), 
+                      data=head.data, datasetName = head.datasetName, 
+                      dataRange = input$start:endp(), 
+                      ssres=ssr())
+    }, res=120)
+    
+    output$sharkPlot2 <- renderPlot({
+      makeScatterPane(ds = 1, 
                       data=head.data, datasetName = head.datasetName, 
                       dataRange = input$start:endp(), 
                       ssres=ssr())
