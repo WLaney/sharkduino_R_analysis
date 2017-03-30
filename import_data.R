@@ -11,7 +11,7 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
   raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
   # delete time-only rows
   interp.data = raw.data[!is.na(ax)]
-  if (nrow(raw.data[is.na(date_time)]) > 50) print("WARNING: Unexpected number of rows with missing dates")
+  if (nrow(raw.data[is.na(date_time)]) > 50) print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ")", sep = ""))
   # delete rows with no valid date interp.
   interp.data = interp.data[!is.na(date_time)]
   
