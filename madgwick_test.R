@@ -7,10 +7,7 @@ library("cowplot")
 source("import_data.R")
 source("madgwick.R")
 
-gyro.data = import_data("data/orient/gyro_data.csv")
-orient5.data = import_data("data/orient/orient5_data_interp_pos.csv")
-
-extract.qs = function(data, beta = 0.1, frequency = 25) {
+extract.qs = function(data, beta = 01.1, frequency = 25) {
   qs = data.frame(q0=1,q1=0,q2=0,q3=0)
   
   for (s in 1:nrow(data)) {
@@ -24,8 +21,41 @@ extract.qs = function(data, beta = 0.1, frequency = 25) {
 }
 
 
-qx = 1:nrow(qs)
 
-euler.data = toEuler.df(qs)
+turn.data = import_data("data/orient/gyro_data.csv")
+camera1.data = import_data("data/camera/camera1_data.csv")
+camera2.data = import_data("data/camera/camera2_data.csv")
 
-qplot(qx, euler.data[[2]], geom = "line")
+turn.qs = extract.qs(turn.data)
+camera1.qs = extract.qs(camera1.data)
+camera2.qs = extract.qs(camera2.data)
+
+
+turn.eas = toEuler.df(turn.qs)
+camera1.eas = toEuler.df(camera1.qs)
+camera2.eas = toEuler.df(camera2.qs)
+
+
+turn.qx = 1:nrow(turn.qs)
+camera1.qx = 1:nrow(camera1.qs)
+camera2.qx = 1:nrow(camera2.qs)
+
+qplot(qx, turn.eas[[2]], geom = "line")
+
+getEAs = function(datafile) {
+  myData = import_data(datafile)
+  myQs = extract.qs(myData)
+  myEAs = toEuler.df(myQs)
+  return(myEAs)
+}
+
+
+fwrite(getEAs("data/camera/nod_data.csv"), "nodeuler.csv")
+
+##qplot demos
+qplot(((1:nrow(camera1.data))/25)[200:5250], camera1.data[[6]][200:5250], geom="line")+scale_x_continuous(breaks = seq(0, 300, 10))
+
+qplot(((camera1.qx)/25)[200:5250], camera1.eas[[3]][200:5250], geom="line")+scale_x_continuous(breaks = seq(0, 300, 10))
+
+
+nod.eas = getEAs("data/camera/nod_data.csv")

@@ -94,6 +94,9 @@ madgwick.update.6dof = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
     s1 = i.4q1 * q3q3 - i.2q3 * ax + 4.0 * q0q0 * q1 - i.2q0 * ay - i.4q1 + i.8q1 * q1q1 + i.8q1 * q2q2 + i.4q1 * az
     s2 = 4.0 * q0q0 * q2 + i.2q0 * ax + i.4q2 * q3q3 - i.2q3 * ay - i.4q2 + i.8q2 * q1q1 + i.8q2 * q2q2 + i.4q2 * az
     s3 = 4.0 * q1q1 * q3 - i.2q1 * ax + 4.0 * q2q2 * q3 - i.2q2 * ay
+    
+
+    
     # Normalize step magnitude
     recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3) 
     s0 = s0 * recipNorm
@@ -127,6 +130,82 @@ madgwick.update.6dof = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
   return(c(q0, q1, q2, q3))
 }
 
+
+#-------------------------------------------------------------------------------------------
+# IMU algorithm update (actually an AHRS algorithm for 6 DoF (no magnetometer) systems)
+# Takes an initial quaternion (4 components), accelerometer x/y/z, and gyro x/y/z (in dps).
+# Returns an updated quaternion. Frequency is sample freq. in Hz. Beta is proportional gain.
+
+madgwick.update.6dof.alt = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
+                                gx, gy, gz, ax, ay, az, 
+                                beta = 0.1, frequency = 25)  {
+  
+  invSampleFreq = 1.0 / frequency
+  # Convert gyroscope degrees/sec to radians/sec
+  gx = gx * 0.01745329
+  gy = gy * 0.01745329
+  gz = gz * 0.01745329
+  
+  # Rate of change of quaternion from gyroscope
+  qDot1 = 0.5 * (-q1 * gx - q2 * gy - q3 * gz)
+  qDot2 = 0.5 * ( q0 * gx + q2 * gz - q3 * gy)
+  qDot3 = 0.5 * ( q0 * gy - q1 * gz + q3 * gx)
+  qDot4 = 0.5 * ( q0 * gz + q1 * gy - q2 * gx)
+  
+  # Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+  if(!((ax == 0.0) && (ay == 0.0) && (az == 0.0))) {
+    
+    # Normalise accelerometer measurement
+    recipNorm = invSqrt(ax * ax + ay * ay + az * az)
+    ax = ax * recipNorm
+    ay = ay * recipNorm
+    az = az * recipNorm
+    
+
+    # Gradient descent algorithm corrective step
+    Fmat = rbind(2*(q1*q3 - q0*q2) - ax,
+          2*(q0*q1 + q2*q3) - ay,
+          2*(0.5 - q1^2 - q2^2) - az)
+    Jmat = rbind(c(-2*q2,  2*q3, -2*q0,	2*q1),
+              c( 2*q1,  2*q0,  2*q3,	2*q2),
+              c(    0, -4*q1, -4*q2,	0))
+    step = (t(Jmat) %*% Fmat);
+    
+    step = step / norm(step, "2");	# normalise step magnitude
+
+    s0 = step[1]
+    s1 = step[2]
+    s2 = step[3]
+    s3 = step[4]
+    
+    
+    # Apply feedback step
+    qDot1 = qDot1 - (beta * s0)
+    qDot2 = qDot2 - (beta * s1)
+    qDot3 = qDot3 - (beta * s2)
+    qDot4 = qDot4 - (beta * s3)
+  } else {
+    print("Warning: Zero accelerometer measurement detected. Skipping feedback step.")
+  }
+  
+  # Integrate rate of change of quaternion to yield updated quaternion
+  q0 = q0 + (qDot1 * invSampleFreq)
+  q1 = q1 + (qDot2 * invSampleFreq)
+  q2 = q2 + (qDot3 * invSampleFreq)
+  q3 = q3 + (qDot4 * invSampleFreq)
+  
+  # Normalise quaternion
+  recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3)
+  q0 = q0 * recipNorm
+  q1 = q1 * recipNorm
+  q2 = q2 * recipNorm
+  q3 = q3 * recipNorm
+  
+  # Return updated quaternion
+  return(c(q0, q1, q2, q3))
+}
+
+
 #-------------------------------------------------------------------------------------------
 # AHRS algorithm update
 
@@ -139,7 +218,7 @@ madgwick.update = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
   # Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
   if((mx == 0) && (my == 0) && (mz == 0)) {
 
-    result.6dof = madgwick.update.6dof(q0, q1, q2, q3, 
+    result.6dof = madgwick.update.6dof.alt(q0, q1, q2, q3, 
                                        gx, gy, gz, 
                                        ax, ay, az, 
                                        beta = beta, frequency = frequency)
@@ -218,6 +297,7 @@ madgwick.update = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
   # s1 = _2q3 * (2.0 * q1q3 - _2q0q2 - ax) + _2q0 * (2.0 * q0q1 + _2q2q3 - ay) - 4.0 * q1 * (1 - 2.0 * q1q1 - 2.0 * q2q2 - az) + _2bz * q3 * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz);
   # s2 = -_2q0 * (2.0 * q1q3 - _2q0q2 - ax) + _2q3 * (2.0 * q0q1 + _2q2q3 - ay) - 4.0 * q2 * (1 - 2.0 * q1q1 - 2.0 * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz);
   # s3 = _2q1 * (2.0 * q1q3 - _2q0q2 - ax) + _2q2 * (2.0 * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz);
+
   # recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); # normalise step magnitude
   # s0 *= recipNorm;
   # s1 *= recipNorm;
