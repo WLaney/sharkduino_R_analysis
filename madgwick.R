@@ -5,7 +5,6 @@
 # Written for Sharkduino by Dara Kharabi
 #=============================================================================================
 
-
 #-------------------------------------------------------------------------------------------
 # Initial quaternion for an object at rest (z is up)
 
@@ -15,6 +14,7 @@ initial.q = c(1,0,0,0)
 # Inverse square root
 # Since real-time performance isn't a goal for us, I'm using a regular 1/sqrt(x) instead of
 # the fast inverse sqrt trick Stoffregen's library uses.
+# But it's just soooooo cool, y'know? --Ben
 
 invSqrt = function(x) {
   return (1/sqrt(x))

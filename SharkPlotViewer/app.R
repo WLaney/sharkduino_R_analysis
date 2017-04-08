@@ -9,16 +9,14 @@ require("fasttime") # Faster data import and manipulation
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
 
-
-
 # Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
-head.data = fread("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/data/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
+head.data = import_data("/home/bdpowell/sharkduino_R_analysis/data/ben-walking-to-get-laundry1.csv");
 # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
-head.data[, date_time := fastPOSIXct(head.data[, date_time])] 
+head.data[, date_time := as.POSIXct(head.data[, date_time])] 
 # Dataset Name, for pretty titles
-head.datasetName = "07/29 Sandbar (Scratch)"
+head.datasetName = "Walking to Get the Laundry"
 
-
+print(head.data);
 
 # this function lets you sample a vector obj at every nth point, 
 # so long graphs don't take forever to render. 
@@ -50,13 +48,14 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
     expression("Gyro Z-Axis ("*degree*"/s)")
   )
   
+  # Scaling stuff.
   myLims = list(
-    c(-1.3, -0.7),
-    c(-0.2,  0.4),
-    c(-0.5,  0.1),
-    c(-150,  150),
-    c(-150,  150),
-    c(-150,  150)
+    c(-4.0, 4.0),    # Accelerometer X
+    c(-4.0, 4.0),    # Accelerometer Y
+    c(-4.0, 4.0),    # Accelerometer Z
+    c(-1000,  1000), # Gyroscope X
+    c(-1000,  1000), # Gyroscope Y
+    c(-1000,  1000)  # Gyroscope Z
   )
   
   # Make plot with GGPlot2
@@ -130,7 +129,7 @@ ui <- fluidPage(
              sliderInput("len",
                          "Window Length:",
                          min = 0,
-                         max = nrow(head.data)/100,
+                         max = nrow(head.data) / 100,
                          step = 25,
                          value = 250,
                          width = "100%")

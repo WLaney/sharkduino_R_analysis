@@ -7,7 +7,7 @@ require("viridis") # viridis color palettes
 
 # Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
 # then edit the following line to reference it.
-data = read.csv("data/out.csv")
+data = read.csv("~/sharkduino_R_analysis/data/ben-walking-to-get-laundry1.csv")
 # dates as POSIXct date objects
 myDates = as.POSIXct(data[[7]], format = "%Y-%m-%d %H:%M:%OS")
 
