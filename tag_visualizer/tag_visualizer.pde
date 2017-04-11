@@ -5,7 +5,7 @@ Float pitch;
 Float yaw;
 
 void setup() {
-  eas = loadTable("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/data/3dcalibeuler.csv", "header");
+  eas = loadTable("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/data/tmp-eas.csv", "header");
   println(eas.getRowCount() + " total rows in table"); 
   
   sample = 1;
