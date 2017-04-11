@@ -16,6 +16,9 @@ subsample <- function(xs, factor) {
   }
 }
 
+# Degree to which data is subsampled during plotting.
+subsample_factor = 2
+
 # Import data
 data = import_data("data/ben-walking-to-get-laundry1.csv")
 timestamps = read.csv("data/ben-walking-to-get-laundry1-timestamp.csv")
@@ -39,9 +42,10 @@ timestamps[,"index"] = apply(timestamps, 1, function(row) {
 total_accel = apply(data[,c("ax","ay","az")], 1, normalize)
 
 # Plot data
-subsample_factor = 3
 
 plot(subsample(total_accel, subsample_factor), cex=0.2)
 title("Summed Accelerometer")
 
-abline(v=timestamps[["index"]] / subsample_factor)
+real_indices = timestamps[["index"]] / subsample_factor
+abline(v=real_indices)
+text(real_indices, c(2.3,2.2), timestamps[["activity"]], cex=0.8)
