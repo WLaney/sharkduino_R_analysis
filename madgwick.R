@@ -5,6 +5,51 @@
 # Written for Sharkduino by Dara Kharabi
 #=============================================================================================
 
+<<<<<<< Updated upstream
+=======
+#-------------------------------------------------------------------------------------------
+# 3D Cartesian rotation matrices and related functions
+
+
+#-------------------------------------------------------------------------------------------
+# 3D Cartesian rotation matrices
+
+Rx = function(th) {
+  return(rbind(c(       1,       0,        0),
+               c(       0, cos(th), -sin(th)),
+               c(       0, sin(th),  cos(th))))
+}
+
+Ry = function(th) {
+  return(rbind(c( cos(th),       0,  sin(th)),
+               c(       0,       1,        0),
+               c(-sin(th),       0,   cos(th))))
+}
+
+Rz = function(th) {
+  return(rbind(c( cos(th), -sin(th),       0),
+               c( sin(th),  cos(th),       0),
+               c(       0,        0,       1)))
+}
+
+rotate.df = function(vx, vy, vz, er, ep, ey) {
+  newRot = data.frame(x = 0, y = 0, z = 0)
+  
+  for (n in 1:length(vx)) {
+    R3d = Rz(ey[n]) %*% Ry(ep[n]) %*% Rx(er[n])
+    newRot[n,] = c(vx[n], vy[n], vz[n]) %*% R3d
+  }
+  
+  return(newRot)
+}
+
+# Needs EAs in roll, pitch, yaw
+rotate.vec = function(val, eas) {
+  R3d = Rz(eas[3]) %*% Ry(eas[2]) %*% Rx(eas[1])
+  return(val %*% R3d)
+}
+
+>>>>>>> Stashed changes
 #-------------------------------------------------------------------------------------------
 # Initial quaternion for an object at rest (z is up)
 
