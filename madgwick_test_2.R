@@ -7,6 +7,7 @@ library("cowplot")
 source("import_data.R")
 source("madgwick.R")
 
+# Convert tag data into tag orientation.
 extract.qs = function(data, beta = 0.7, frequency = 25) {
   qs = data.frame(q0=1,q1=0,q2=0,q3=0)
   
@@ -20,6 +21,7 @@ extract.qs = function(data, beta = 0.7, frequency = 25) {
   return(qs)
 }
 
+# Convenience function for working on one .csv file.
 getEAs = function(datafile) {
   myData = import_data(datafile)
   myQs = extract.qs(myData)
