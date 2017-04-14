@@ -35,5 +35,12 @@ calib.eas = toEuler.df(calib.qs)
 new.as = rotate.df(calib.data[[1]], calib.data[[2]], calib.data[[3]],
           -calib.eas[[1]], -calib.eas[[2]], -calib.eas[[3]])
 
-qplot(1:nrow(calib.data), new.as[[3]], geom="line") +
-  geom_line(aes(y=calib.data[[3]]), col="red", alpha = "0.5")
+
+mag.new = sqrt(new.as[[1]]^2 + new.as[[2]]^2 + new.as[[3]]^2)
+mag.base = sqrt(calib.data[[1]]^2 + calib.data[[2]]^2 + calib.data[[3]]^2)
+qplot(1:nrow(calib.data), mag.new, geom="line") +
+  geom_line(aes(y=mag.base), col="red", alpha = "0.5")
+
+ds = 1
+qplot(1:nrow(calib.data), new.as[[ds]], geom="line") +
+  geom_line(aes(y=calib.data[[ds]]), col="red", alpha = "0.5")
