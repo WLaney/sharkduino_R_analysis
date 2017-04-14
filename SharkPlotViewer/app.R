@@ -8,6 +8,7 @@ require("data.table") # Faster data import and manipulation
 require("fasttime") # Faster data import and manipulation
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
+source("../import_data.R")
 
 # Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
 head.data = import_data("/home/bdpowell/sharkduino_R_analysis/data/ben-walking-to-get-laundry1.csv");
