@@ -5,8 +5,6 @@
 # Written for Sharkduino by Dara Kharabi
 #=============================================================================================
 
-<<<<<<< Updated upstream
-=======
 #-------------------------------------------------------------------------------------------
 # 3D Cartesian rotation matrices and related functions
 
@@ -49,7 +47,6 @@ rotate.vec = function(val, eas) {
   return(val %*% R3d)
 }
 
->>>>>>> Stashed changes
 #-------------------------------------------------------------------------------------------
 # Initial quaternion for an object at rest (z is up)
 
