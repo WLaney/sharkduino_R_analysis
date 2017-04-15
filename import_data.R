@@ -12,7 +12,7 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # delete time-only rows
   interp.data = raw.data[!is.na(ax)]
   # Throw warning if more than 10 seconds of uninterpolated data.
-  if (nrow(raw.data[is.na(date_time)]) > 250) print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ")", sep = ""))
+  if (nrow(raw.data[is.na(date_time)]) > 250) print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ").", sep = ""))
   # delete rows with no valid date interp.
   interp.data = interp.data[!is.na(date_time)]
   
@@ -25,6 +25,18 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
     pos.data = pos.data[, c("gx", "gy") := .(gy, gx)]
     # invert X axis to preserve right handedness
     pos.data[,gx := -gx]
+    
+    # check if gyro data has missing rows
+    if (anyNA(interp.data[,4:6])) {
+      print("WARNING: Sparse gyro data detected. Linearly interpolating gyro reads (this may affect data quality).")
+      # interpolate missing gyro rows
+      pos.data[, gx := approx(pos.data[, gx], xout=1:nrow(pos.data))$y] 
+      pos.data[, gy := approx(pos.data[, gy], xout=1:nrow(pos.data))$y] 
+      pos.data[, gz := approx(pos.data[, gz], xout=1:nrow(pos.data))$y] 
+      # delete rows with no valid gyro interp.
+      print(paste("WARNING: Culling", nrow(pos.data[is.na(gx) | is.na(gy) | is.na(gz)]), "rows with no valid gyro interpolation."))
+      pos.data = pos.data[!is.na(gx) & !is.na(gy) & !is.na(gz)]
+    }
   } else {
     # Throw away bad gyro daya from v1.x tags
     pos.data = pos.data[,c(1,2,3,7)]
