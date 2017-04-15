@@ -1,4 +1,4 @@
-import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
+import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE) {
   require("data.table")
   require("fasttime")
   
@@ -8,18 +8,27 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE) {
   raw.data[, date_time := fastPOSIXct(raw.data[, date_time])] 
   
   # interpolate dates
-  raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")]
-  
+  raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
   # delete time-only rows
   interp.data = raw.data[!is.na(ax)]
-  if (nrow(raw.data[is.na(date_time)]) > 50)
-    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ")", sep = ""))
+  # Throw warning if more than 10 seconds of uninterpolated data.
+  if (nrow(raw.data[is.na(date_time)]) > 250) print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ")", sep = ""))
   # delete rows with no valid date interp.
   interp.data = interp.data[!is.na(date_time)]
   
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
   # separate files for them.
   pos.data = interp.data[,1:7]
+  
+  if (legacy == FALSE) {
+    # flip X and Y gyro axes for v2.x tags
+    pos.data = pos.data[, c("gx", "gy") := .(gy, gx)]
+    # invert X axis to preserve right handedness
+    pos.data[,gx := -gx]
+  } else {
+    # Throw away bad gyro daya from v1.x tags
+    pos.data = pos.data[,c(1,2,3,7)]
+  }
   
   split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
   
