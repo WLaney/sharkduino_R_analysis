@@ -20,7 +20,9 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # separate files for them.
   pos.data = interp.data[,1:7]
   
+  # Process gyro data according to tag series
   if (legacy == FALSE) {
+    
     # flip X and Y gyro axes for v2.x tags
     pos.data = pos.data[, c("gx", "gy") := .(gy, gx)]
     # invert X axis to preserve right handedness
@@ -29,6 +31,7 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
     # check if gyro data has missing rows
     if (anyNA(interp.data[,4:6])) {
       print("WARNING: Sparse gyro data detected. Linearly interpolating gyro reads (this may affect data quality).")
+      
       # interpolate missing gyro rows
       pos.data[, gx := approx(pos.data[, gx], xout=1:nrow(pos.data))$y] 
       pos.data[, gy := approx(pos.data[, gy], xout=1:nrow(pos.data))$y] 
@@ -37,14 +40,16 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
       print(paste("WARNING: Culling", nrow(pos.data[is.na(gx) | is.na(gy) | is.na(gz)]), "rows with no valid gyro interpolation."))
       pos.data = pos.data[!is.na(gx) & !is.na(gy) & !is.na(gz)]
     }
+    
   } else {
     # Throw away bad gyro daya from v1.x tags
     pos.data = pos.data[,c(1,2,3,7)]
   }
   
+  # path splitting helper function
   split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
   
-  filename = paste(strsplit(split_path(data_file)[1], "[.]")[[1]][1], "_interp_pos", sep = "")
+  filename = paste(strsplit(split_path(data_file)[1], "[.]")[[1]][1], "_processed", sep = "")
   
   if (save_csv == TRUE) {
     fwrite(pos.data, file = paste(filename, ".csv", sep = ""))
