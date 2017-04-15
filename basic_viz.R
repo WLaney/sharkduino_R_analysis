@@ -4,12 +4,13 @@ require("psd") # power spectrum distributions with fancy tapers
 require("signal") # signal processing toolkit w/filters, etc
 require("seewave") # time wave visualization (spectrograms!)
 require("viridis") # viridis color palettes
+source("import_data.R")
 
 # Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
 # then edit the following line to reference it.
-data = read.csv("~/sharkduino_R_analysis/data/ben-walking-to-get-laundry1.csv")
+data = import_data("~/Sharkduino/sharkduino_R_analysis/data/tmp-data.csv", legacy=F)
 # dates as POSIXct date objects
-myDates = as.POSIXct(data[[7]], format = "%Y-%m-%d %H:%M:%OS")
+myDates = data[[7]]
 
 # this function lets you sample a vector obj at every nth point, 
 # so long graphs don't take forever to render. 
@@ -20,13 +21,18 @@ subsample = function(obj, ssres=1) {
 
 ## Simple scatterplot of one axis
 # Which points to plot?
-dataRange = 360000:370000
+dataRange = 1:nrow(data)
 # subsampling resolution?
-ssres = 5
+ssres = 1
 # dataset?
-ds = 3
+ds = 5
 # plot with ggplot2
-qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), geom="line") +labs(x="Time", y="Accelerometer Z-Axis (Gs)", title="Accelerometer Z Data for 07/28 Dataset (Sub-sampling: 1/5)")# + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
+qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), geom="line") + #scale_y_continuous(breaks = -12:12/10) + 
+  scale_x_datetime(breaks = date_breaks("10 sec"), labels = date_format("%S")) +
+  labs(
+    x="Time", 
+    y="Accelerometer Z-Axis (Gs)", 
+    title="Accelerometer Z Data for 07/28 Dataset (Sub-sampling: 1/5)")# + ylim(-2,1.5) #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))qplot(1:100, (abs(fft(subsample(data[[1]][1:350000],50)))^2)[1:100], alpha = 0.25) +scale_y_log10() #+ geom_line()  + scale_x_datetime(breaks = date_breaks("1 sec"), labels = date_format("%S"))
 
 ## Aggregates -- not useful right now
 #aggData = aggregate(data[1:6], list(myDates), mean)
