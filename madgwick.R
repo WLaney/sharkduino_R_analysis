@@ -6,7 +6,7 @@
 #=============================================================================================
 
 #-------------------------------------------------------------------------------------------
-# 3D Cartesian rotation matrices
+# 3D Cartesian and quaternion rotation matrices
 
 Rx = function(th) {
   return(rbind(c(       1,       0,        0),
@@ -26,16 +26,22 @@ Rz = function(th) {
                c(       0,        0,       1)))
 }
 
+Rq = function(q0, q1, q2, q3) {
+  return(rbind(c(q0^2 + q1^2 - (q2^2 +q3^2),         2*q1*q2 - 2*q0*q3,         2*q1*q3 + 2*q0*q2),
+               c(         2*q1*q2 + 2*q0*q3, q0^2 - q1^2 + q2^2 - q3^2,         2*q2*q3 - 2*q0*q1),
+               c(         2*q1*q3 - 2*q0*q2,         2*q2*q3 + 2*q0*q1, q0^2 - q1^2 - q2^2 + q3^2)))
+}
+
 #-------------------------------------------------------------------------------------------
 # 3D Cartesian rotation function (returns data frame)
-# Takes 3 vectors for initial xyz values and 3 vectors for roll/pitch/yaw rotation amounts
-# (in radians). Returns a data frame with rotated xys values. Rotation order is R/P/Y.
+# Takes 3 vectors for initial xyz values and 3 vectors for yaw/pitch/roll rotation amounts
+# (in radians). Returns a data frame with rotated xys values. Rotation order is Y/P/R.
 
-rotate.df = function(vx, vy, vz, er, ep, ey) {
+rotate.df = function(vx, vy, vz, ey, ep, er) {
   newRot = data.frame(x = 0, y = 0, z = 0)
   
   for (n in 1:length(vx)) {
-    R3d = Rz(ey[n]) %*% Ry(ep[n]) %*% Rx(er[n])
+    R3d = Rx(er[n]) %*% Ry(ep[n]) %*% Rz(ey[n])
     newRot[n,] = c(vx[n], vy[n], vz[n]) %*% R3d
   }
   
@@ -44,13 +50,37 @@ rotate.df = function(vx, vy, vz, er, ep, ey) {
 
 #-------------------------------------------------------------------------------------------
 # 3D Cartesian rotation function (returns vector)
-# Takes a vector c(x,y,z) for initial xyz values and a vector c(r,p,y) for roll/pitch/yaw
-# EAs (in radians). Returns a vector with rotated xys values. Rotation order is R/P/Y.
+# Takes a vector c(x,y,z) for initial xyz values and a vector c(r,p,y) for yaw/pitch/roll
+# EAs (in radians). Returns a vector with rotated xys values. Rotation order is Y/P/R.
 
 rotate.vec = function(val, eas) {
-  R3d = Rz(eas[3]) %*% Ry(eas[2]) %*% Rx(eas[1])
+  R3d = Rx(eas[1]) %*% Ry(eas[2]) %*% Rz(eas[3])
   return(val %*% R3d)
 }
+
+#-------------------------------------------------------------------------------------------
+# Quaternion rotation function (returns data frame)
+
+rotateQ.df = function(vx, vy, vz, q0, q1, q2, q3) {
+  newRot = data.frame(x = 0, y = 0, z = 0)
+  
+  for (n in 1:length(vx)) {
+    newRot[n,] = c(vx[n], vy[n], vz[n]) %*% Rq(q0[n], q1[n], q2[n], q3[n])
+  }
+  
+  return(newRot)
+}
+
+rotateQ.df.inv = function(vx, vy, vz, q0, q1, q2, q3) {
+  newRot = data.frame(x = 0, y = 0, z = 0)
+  
+  for (n in 1:length(vx)) {
+    newRot[n,] = c(vx[n], vy[n], vz[n]) %*% t(Rq(q0[n], q1[n], q2[n], q3[n]))
+  }
+  
+  return(newRot)
+}
+
 
 #-------------------------------------------------------------------------------------------
 # Initial quaternion for an object at rest (z is up)

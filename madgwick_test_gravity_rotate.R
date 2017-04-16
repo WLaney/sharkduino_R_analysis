@@ -33,14 +33,16 @@ calib.qs = extract.qs(calib.data)
 calib.eas = toEuler.df(calib.qs)
 
 new.as = rotate.df(calib.data[[1]], calib.data[[2]], calib.data[[3]],
-          -calib.eas[[1]], -calib.eas[[2]], -calib.eas[[3]])
-
+          -calib.eas[[2]], -calib.eas[[1]], -calib.eas[[3]])
+new.as.q = rotateQ.df.inv(calib.data[[1]], calib.data[[2]], calib.data[[3]],
+                         calib.qs[[1]], calib.qs[[2]], calib.qs[[3]], calib.qs[[4]])
 
 mag.new = sqrt(new.as[[1]]^2 + new.as[[2]]^2 + new.as[[3]]^2)
 mag.base = sqrt(calib.data[[1]]^2 + calib.data[[2]]^2 + calib.data[[3]]^2)
 qplot(1:nrow(calib.data), mag.new, geom="line") +
   geom_line(aes(y=mag.base), col="red", alpha = "0.5")
 
-ds = 1
+ds = 3
 qplot(1:nrow(calib.data), new.as[[ds]], geom="line") +
-  geom_line(aes(y=calib.data[[ds]]), col="red", alpha = "0.5")
+  geom_line(aes(y=calib.data[[ds]]), col="red", alpha = "0.5") + 
+  geom_line(aes(y=new.as.q[[ds]]), col="blue", alpha = "0.5")
