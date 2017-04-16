@@ -32,17 +32,17 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
     if (anyNA(interp.data[,4:6])) {
       print("WARNING: Sparse gyro data detected. Linearly interpolating gyro reads (this may affect data quality).")
       
-      # interpolate missing gyro rows
+      # Interpolate missing gyro rows
       pos.data[, gx := approx(pos.data[, gx], xout=1:nrow(pos.data))$y] 
       pos.data[, gy := approx(pos.data[, gy], xout=1:nrow(pos.data))$y] 
       pos.data[, gz := approx(pos.data[, gz], xout=1:nrow(pos.data))$y] 
-      # delete rows with no valid gyro interp.
+      # Delete rows with no valid gyro interp.
       print(paste("WARNING: Culling", nrow(pos.data[is.na(gx) | is.na(gy) | is.na(gz)]), "rows with no valid gyro interpolation."))
       pos.data = pos.data[!is.na(gx) & !is.na(gy) & !is.na(gz)]
     }
     
   } else {
-    # Throw away bad gyro daya from v1.x tags
+    # Throw away bad gyro data from v1.x tags
     pos.data = pos.data[,c(1,2,3,7)]
   }
   
