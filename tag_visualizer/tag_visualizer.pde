@@ -13,7 +13,7 @@ void setup() {
   frameRate(25);
   size(1024, 600, P3D); 
   rectMode(CENTER);
-  camera(width*.75, height*0.2, (height/2.0) / tan(PI*30.0 / 180.0), width/2.0, height/2.0, 0, 0, 1, 0);
+  camera(width*.75, -height/3, -height* tan(PI*20.0 / 180.0), width/2.0, height/2.0, 0, 0, 0, 1);
 }
 
 void draw() {
@@ -28,18 +28,19 @@ void draw() {
   stroke(255);
   
   pushMatrix();
-  translate(width/2, height*0.4, 0); 
-  rotateX(roll);
-  rotateY(yaw);
+  translate(width/2, height*0.4, -75); 
+  rotateY(yaw); 
   rotateZ(pitch);
+  rotateX(roll);
+  
   
   pushMatrix();
-  translate(0, 0, -70); 
-  box(150, 40, 220);
+  translate(0, 70, 0); 
+  box(150, 220, 40);
   popMatrix();
   
-  translate(40, 0, 70); 
-  box(70, 40, 57);
+  translate(40, -70, 0); 
+  box(70, 57, 40);
   popMatrix();
   
   
@@ -47,11 +48,11 @@ void draw() {
   fill(200);
   stroke(255);
   
-  translate(width/2, height*.6, 0); 
+  translate(width/2, height*.5, height*.2); 
   rotateX(0);
   rotateY(0);
   rotateY(0); 
-  box(500, 10, 500);
+  box(500, 500, 10);
   
   sample = min(sample+1, eas.getRowCount()-1);
 }
