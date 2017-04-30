@@ -1,11 +1,15 @@
-setwd("~/sharkduino/sharkduino_R_analysis")
+# Uses madgwick.R to rotate data into the world coords. Proof-of-concept
+# for AHRS-based rotation.
+# By Dara Kharabi for Sharkduino
 
 library("data.table")
 library("ggplot2")
 library("cowplot")
 
-source("import_data.R")
-source("madgwick.R")
+source(".Rprofile")
+source("packages/import_data.R")
+source("packages/madgwick.R")
+source("packages/subsample.R")
 
 extract.qs = function(data, beta = 0.7, frequency = 25) {
   qs = data.frame(q0=1,q1=0,q2=0,q3=0)
@@ -37,10 +41,10 @@ new.as = rotate.df(calib.data[[1]], calib.data[[2]], calib.data[[3]],
 new.as.q = rotateQ.df.inv(calib.data[[1]], calib.data[[2]], calib.data[[3]],
                          calib.qs[[1]], calib.qs[[2]], calib.qs[[3]], calib.qs[[4]])
 
-mag.new = sqrt(new.as[[1]]^2 + new.as[[2]]^2 + new.as[[3]]^2)
-mag.base = sqrt(calib.data[[1]]^2 + calib.data[[2]]^2 + calib.data[[3]]^2)
-qplot(1:nrow(calib.data), mag.new, geom="line") +
-  geom_line(aes(y=mag.base), col="red", alpha = "0.5")
+#mag.new = sqrt(new.as[[1]]^2 + new.as[[2]]^2 + new.as[[3]]^2)
+#mag.base = sqrt(calib.data[[1]]^2 + calib.data[[2]]^2 + calib.data[[3]]^2)
+#qplot(1:nrow(calib.data), mag.new, geom="line") +
+#  geom_line(aes(y=mag.base), col="red", alpha = "0.5")
 
 ds = 3
 qplot(1:nrow(calib.data), new.as[[ds]], geom="line") +

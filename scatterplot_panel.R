@@ -5,18 +5,19 @@ require("ggplot2") # for pretty plots
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
 
+source(".Rprofile")
+source("packages/import_data.R")
+source("packages/subsample.R")
+
 # Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
 # then edit the following line to reference it.
-head.data = fread("data/20160729_Sandbar_Scratch.csv", sep=",", header=TRUE)
-# dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
-head.data[, date_time := fastPOSIXct(head.data[, date_time])] 
+data = import_data("data/tmp-data.csv", legacy=F)
+
 
 # this function lets you sample a vector obj at every nth point, 
 # so long graphs don't take forever to render. 
 # Make sure to update your sampling rate if you're using subsampling!
-subsample = function(obj, ssres=1) {
-  return(obj[seq(1, length(obj), ssres)])
-}
+subsample = ss
 
 # Function for making our plots (with lapply)
 makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow(data), ssres = 1) {
@@ -66,10 +67,6 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   return(myPlot)
 }
-
-
-# Change theme to cowplot's theme
-theme_set(theme_cowplot(font_size=10)) 
 
 ## Array of scatterplots for a given dataset
 # Name of dataset (for plot titles)

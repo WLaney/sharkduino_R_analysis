@@ -71,6 +71,8 @@ rotateQ.df = function(vx, vy, vz, q0, q1, q2, q3) {
   return(newRot)
 }
 
+# Inverted quaternion rotation. 
+# Computationally less expensive than inverting the quaternion and rotating
 rotateQ.df.inv = function(vx, vy, vz, q0, q1, q2, q3) {
   newRot = data.frame(x = 0, y = 0, z = 0)
   
@@ -114,17 +116,16 @@ toEuler.df = function(qs) {
     
     test = q1*q2 + q3*q0;
     if (test > 0.499) { # singularity at north pole
-      yaw = 2 * atan2(q1,q0);
-      pitch = pi/2;
-      roll = 0;
+      yaw = 2 * atan2(q1,q0)
+      pitch = pi/2
+      roll = 0
     } else if (test < -0.499) { # singularity at south pole
-      yaw = -2 * atan2(q1,q0);
-      pitch = -pi/2;
-      roll = 0;
-      return;
+      yaw = -2 * atan2(q1,q0)
+      pitch = -pi/2
+      roll = 0
     } else {
-      yaw = atan2(q2*q0-q1*q3 , 0.5 - q2*q2 - q3*q3);
-      pitch = asin(2*test);
+      yaw = atan2(q2*q0-q1*q3 , 0.5 - q2*q2 - q3*q3)
+      pitch = asin(2*test)
       roll = atan2(q1*q0-q2*q3 , 0.5 - q1*q1 - q3*q3)
     }
     yaw.l[i] = yaw
@@ -139,22 +140,44 @@ toEuler.df = function(qs) {
   return(data.table(yaw, pitch, roll))
 }
 
+
+toEuler = function(q0, q1, q2, q3) {
+  test = q1*q2 + q3*q0;
+  
+  if (test > 0.499) { # singularity at north pole
+    yaw = 2 * atan2(q1,q0)
+    pitch = pi/2
+    roll = 0
+  } else if (test < -0.499) { # singularity at south pole
+    yaw = -2 * atan2(q1,q0)
+    pitch = -pi/2
+    roll = 0
+  } else {
+    yaw = atan2(q2*q0-q1*q3 , 0.5 - q2*q2 - q3*q3)
+    pitch = asin(2*test)
+    roll = atan2(q1*q0-q2*q3 , 0.5 - q1*q1 - q3*q3)
+  }
+  
+  return(c(yaw, pitch, roll))
+}
+
+
 #RPY order
 toEuler.df.RPY = function(qs) {
   q0 = qs[[1]]
   q1 = qs[[2]]
   q2 = qs[[3]]
   q3 = qs[[4]]
-  roll = atan2(q0*q1 + q2*q3, 0.5 - q1*q1 - q2*q2);
-  pitch = asin(pmax(pmin(-2.0 * (q1*q3 - q0*q2), 1), -1));
-  yaw = atan2(q1*q2 + q0*q3, 0.5 - q2*q2 - q3*q3);
+  roll = atan2(q0*q1 + q2*q3, 0.5 - q1*q1 - q2*q2)
+  pitch = asin(pmax(pmin(-2.0 * (q1*q3 - q0*q2), 1), -1))
+  yaw = atan2(q1*q2 + q0*q3, 0.5 - q2*q2 - q3*q3)
   return(data.table(roll, pitch, yaw))
 }
 
-toEuler = function(q0, q1, q2, q3) {
-  roll = atan2(q0*q1 + q2*q3, 0.5 - q1*q1 - q2*q2);
-  pitch = asin(pmax(pmin(-2.0 * (q1*q3 - q0*q2), 1), -1));
-  yaw = atan2(q1*q2 + q0*q3, 0.5 - q2*q2 - q3*q3);
+toEuler.RPY = function(q0, q1, q2, q3) {
+  roll = atan2(q0*q1 + q2*q3, 0.5 - q1*q1 - q2*q2)
+  pitch = asin(pmax(pmin(-2.0 * (q1*q3 - q0*q2), 1), -1))
+  yaw = atan2(q1*q2 + q0*q3, 0.5 - q2*q2 - q3*q3)
   return(c(roll, pitch, yaw))
 }
 

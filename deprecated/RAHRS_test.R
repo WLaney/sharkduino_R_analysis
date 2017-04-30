@@ -1,3 +1,6 @@
+# Test for RAHRS, an AHRS library that was ultimately not used by the project
+# By Dara Kharabi
+
 require("data.table")
 require("RAHRS")
 

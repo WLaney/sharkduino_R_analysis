@@ -1,7 +1,7 @@
+require("data.table")
+require("fasttime")
+
 import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE) {
-  require("data.table")
-  require("fasttime")
-  
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
   # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")

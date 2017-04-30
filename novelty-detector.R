@@ -1,8 +1,8 @@
 # This script is an offline version of my naive novelty detection algorithm.
 # While I don't expect it to be too accurate, I do think it's a good thing to show the Doctor at
 # the end of the semester, and serves as a good introduction to R.
-setwd("~/sharkduino_R_analysis");
-source("import_data.R")
+source(".Rprofile")
+source("packages/import_data.R")
 
 # Get magnitude of a vector
 normalize <- function(x) sqrt(sum(x^2))

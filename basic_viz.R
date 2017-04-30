@@ -4,20 +4,20 @@ require("psd") # power spectrum distributions with fancy tapers
 require("signal") # signal processing toolkit w/filters, etc
 require("seewave") # time wave visualization (spectrograms!)
 require("viridis") # viridis color palettes
-source("import_data.R")
+
+source(".Rprofile")
+source("packages/import_data.R")
+source("packages/subsample.R")
 
 # Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
 # then edit the following line to reference it.
-data = import_data("~/Sharkduino/sharkduino_R_analysis/data/tmp-data.csv", legacy=F)
-# dates as POSIXct date objects
+data = import_data("data/tmp-data.csv", legacy=F)
 myDates = data[[7]]
 
 # this function lets you sample a vector obj at every nth point, 
 # so long graphs don't take forever to render. 
 # Make sure to update your sampling rate if you're using subsampling!
-subsample = function(obj, ssres=1) {
-  return(obj[seq(1, length(obj), ssres)])
-}
+subsample = ss
 
 ## Simple scatterplot of one axis
 # Which points to plot?
@@ -25,7 +25,7 @@ dataRange = 1:nrow(data)
 # subsampling resolution?
 ssres = 1
 # dataset?
-ds = 5
+ds = 1
 # plot with ggplot2
 qplot(subsample(myDates[dataRange],ssres), subsample(data[[ds]][dataRange],ssres), geom="line") + #scale_y_continuous(breaks = -12:12/10) + 
   scale_x_datetime(breaks = date_breaks("10 sec"), labels = date_format("%S")) +
