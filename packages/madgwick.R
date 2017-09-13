@@ -186,83 +186,74 @@ toEuler.RPY = function(q0, q1, q2, q3) {
 # Takes an initial quaternion (4 components), accelerometer x/y/z, and gyro x/y/z (in dps).
 # Returns an updated quaternion. Frequency is sample freq. in Hz. Beta is proportional gain.
 
-madgwick.update.6dof = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
-                                gx, gy, gz, ax, ay, az, 
+madgwick.update.6dof.vec = function(q = c(1,0,0,0),
+                                g, a, 
                                 beta = 0.1, frequency = 25)  {
   
   invSampleFreq = 1.0 / frequency
   # Convert gyroscope degrees/sec to radians/sec
-  gx = gx * 0.01745329
-  gy = gy * 0.01745329
-  gz = gz * 0.01745329
+  g = g * pi/180
   
   # Rate of change of quaternion from gyroscope
-  qDot1 = 0.5 * (-q1 * gx - q2 * gy - q3 * gz)
-  qDot2 = 0.5 * ( q0 * gx + q2 * gz - q3 * gy)
-  qDot3 = 0.5 * ( q0 * gy - q1 * gz + q3 * gx)
-  qDot4 = 0.5 * ( q0 * gz + q1 * gy - q2 * gx)
+  # this section is equivalent to "qd = 0.5 * crossprod(t(q), c(0,g))[1,]"
+  # written this way because it runs faster
+  q0 = q[1]
+  q1 = q[2]
+  q2 = q[3]
+  q3 = q[4]
+  gx = g[1]
+  gy = g[2]
+  gz = g[3]
+  qDot1 = (-q1 * gx - q2 * gy - q3 * gz)
+  qDot2 = ( q0 * gx + q2 * gz - q3 * gy)
+  qDot3 = ( q0 * gy - q1 * gz + q3 * gx)
+  qDot4 = ( q0 * gz + q1 * gy - q2 * gx)
+  qd = 0.5 * c(qDot1, qDot2, qDot3, qDot4)
   
   # Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-  if(!((ax == 0.0) && (ay == 0.0) && (az == 0.0))) {
+  if(!((a[1] == 0) && (a[2] == 0) && (a[3] == 0)))  {
     
     # Normalise accelerometer measurement
-    recipNorm = invSqrt(ax * ax + ay * ay + az * az)
-    ax = ax * recipNorm
-    ay = ay * recipNorm
-    az = az * recipNorm
+    a = a/sqrt(sum(a*a))
     
-
+    
     # Gradient descent algorithm corrective step
-    Fmat = rbind(2*(q1*q3 - q0*q2) - ax,
-                 2*(q0*q1 + q2*q3) - ay,
-                 2*(0.5 - q1^2 - q2^2) - az)
+    Fmat = rbind(2*(q1*q3 - q0*q2) - a[1],
+                 2*(q0*q1 + q2*q3) - a[2],
+                 2*(0.5 - q1^2 - q2^2) - a[3])
     Jmat = rbind(c(-2*q2,  2*q3, -2*q0,	2*q1),
                  c( 2*q1,  2*q0,  2*q3,	2*q2), 
                  c(    0, -4*q1, -4*q2,	0))
     step = (t(Jmat) %*% Fmat);
     
     step = step / norm(step, "2");	# normalise step magnitude
-
-    s0 = step[1]
-    s1 = step[2]
-    s2 = step[3]
-    s3 = step[4]
     
     
     # Apply feedback step
-    qDot1 = qDot1 - (beta * s0)
-    qDot2 = qDot2 - (beta * s1)
-    qDot3 = qDot3 - (beta * s2)
-    qDot4 = qDot4 - (beta * s3)
+    qd = qd - (beta * step)
+
   } else {
     print("Warning: Zero accelerometer measurement detected. Skipping feedback step.")
   }
   
   # Integrate rate of change of quaternion to yield updated quaternion
-  q0 = q0 + (qDot1 * invSampleFreq)
-  q1 = q1 + (qDot2 * invSampleFreq)
-  q2 = q2 + (qDot3 * invSampleFreq)
-  q3 = q3 + (qDot4 * invSampleFreq)
+  q = q + (qd * invSampleFreq)
   
   # Normalise quaternion
-  recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3)
-  q0 = q0 * recipNorm
-  q1 = q1 * recipNorm
-  q2 = q2 * recipNorm
-  q3 = q3 * recipNorm
+  q = q/sqrt(sum(q*q))
   
   # Return updated quaternion
-  return(c(q0, q1, q2, q3))
+  return(q)
 }
 
 #-------------------------------------------------------------------------------------------
-# IMU algorithm update - older version that eschews matrix math.
-# This version may be slightly faster than the other method, but the math is harder to 
+# IMU algorithm update - older version that eschews R's built-in matrix math.
+# This version is slightly faster than the other method, but the code is harder to 
 # understand.
 
-madgwick.update.6dof.nomatrix = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
-                                         gx, gy, gz, ax, ay, az, 
-                                         beta = 0.1, frequency = 25)  {
+madgwick.update.6dof = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
+                                gx, gy, gz, ax, ay, az, 
+                                beta = 0.1, frequency = 25)  {
   
   invSampleFreq = 1.0 / frequency
   # Convert gyroscope degrees/sec to radians/sec
@@ -469,7 +460,7 @@ madgwick.update = function(q0 = 1, q1 = 0, q2 = 0, q3 = 0,
 #-------------------------------------------------------------------------------------------
 # Convenience function for calling AHRS algorithm update with vector arguments
 
-madgwick.update.vec = function(q = c(1, 0, 0, 0), 
+madgwick.update.vec.old = function(q = c(1, 0, 0, 0), 
                                g, a, m, 
                                beta = 0.1, frequency = 25) {
   # Break vectors into components
@@ -495,4 +486,27 @@ madgwick.update.vec = function(q = c(1, 0, 0, 0),
                          ax, ay, az, 
                          mx, my, mz, 
                          beta, frequency))
+}
+
+#-------------------------------------------------------------------------------------------
+# New function for calling AHRS algorithm update with vector arguments
+
+madgwick.update.vec = function(q = c(1, 0, 0, 0), 
+                               g, a, m, 
+                               beta = 0.1, frequency = 25) {
+  
+  # Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
+  if((m[1] == 0) && (m[2] == 0) && (m[3] == 0)) {
+    
+    result.6dof = madgwick.update.6dof.vec(q, g, a,
+                                           beta = beta, frequency = frequency)
+    return(result.6dof)
+    
+  } else {
+
+    print("Sharkduino with a magnetometer?")
+    return(NA)
+    
+  }
+  
 }
