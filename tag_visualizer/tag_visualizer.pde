@@ -5,13 +5,14 @@ Float pitch;
 Float yaw;
 
 void setup() {
-  eas = loadTable("/Users/Centigonal/Sharkduino/sharkduino_R_analysis/data/tmp-eas.csv", "header");
+  size(1024, 600, P3D); 
+
+  eas = loadTable("/Users/dara/Projects/Sharkduino/sharkduino_R_analysis/data/tmp-eas.csv", "header");
   println(eas.getRowCount() + " total rows in table"); 
   
   sample = 1;
   
   frameRate(25);
-  size(1024, 600, P3D); 
   rectMode(CENTER);
   camera(width*.75, -height/3, -height* tan(PI*20.0 / 180.0), width/2.0, height/2.0, 0, 0, 0, 1);
 }
