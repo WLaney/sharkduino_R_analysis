@@ -1,4 +1,3 @@
-setwd("~/sharkduino/sharkduino_R_analysis")
 
 library.path <- cat(.libPaths())
 #.libPaths("/Library/Frameworks/R.framework/Versions/3.3/Resources/library") 
@@ -6,25 +5,40 @@ library("data.table", lib.loc = library.path)
 library("fasttime", lib.loc = library.path)
 
 
-source("import_data.R")
-source("madgwick.R")
+source("packages/import_data.R")
+source("packages/madgwick.R")
 
-extract.qs = function(data, beta = 0.7, frequency = 25) {
-  qs = data.frame(q0=1,q1=0,q2=0,q3=0)
+extract.qs = function(data, beta = 0.7, frequency = 25, init.q = c(1, 0, 0, 0)) {
+  data.length = nrow(data)
   
-  for (s in 1:nrow(data)) {
-    qs[s+1,] = madgwick.update.vec(q = as.numeric(qs[s,]), 
-                                   g = as.numeric(data[s, 4:6]), 
-                                   a = as.numeric(data[s, 1:3]),
-                                   m = c(0, 0, 0),
-                                   beta, frequency)
+  ql = l <- vector("list", data.length + 1)
+  ql[[1]] = as.list(init.q)
+  
+  for (s in 1:data.length) {
+    # Print progress
+    if (s %% 10000 == 0){ print(paste("Determined orientation for", s, "/", data.length, "rows"))}
+    # Run madgwick to determine new row quaternion
+    new.row.vec = madgwick.update.vec(q = as.numeric(ql[[s]]), 
+                                      g = as.numeric(data[s, 4:6]), 
+                                      a = as.numeric(data[s, 1:3]),
+                                      m = c(0, 0, 0),
+                                      beta, frequency)
+    # Add new row to ql
+    ql[[s+1]] =  as.list(new.row.vec)
   }
+  
+  # Turn ql into a data table
+  qs = rbindlist(ql)
+  names(qs) = c("q0", "q1", "q2", "q3")
+  
   return(qs)
 }
 
 getEAs = function(datafile) {
   myData = import_data(datafile)
+  print("Imported data. Beginning orientation determination...")
   myQs = extract.qs(myData)
+  print("Determined orientation Qs for all rows.")
   myEAs = toEuler.df(myQs)
   return(myEAs)
 }
