@@ -6,23 +6,18 @@ library(shiny) # web app library
 library(ggplot2) # better graphs
 library(scales) # for better scales
 library(cowplot) # for arranging plots in grids
-source("../import_data.R") # for importing data
+source("../packages/import_data.R") # for importing data
+source("../packages/subsample.R") # for subsampling
 
-# Read in interpolated CSV. Path must be changed if you're not on Dara's laptop.
-head.data = import_data("/home/bdpowell/sharkduino_R_analysis/data/ben-walking-to-get-laundry1.csv");
-# dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
-head.data[, date_time := as.POSIXct(head.data[, date_time])] 
+
+# Read in raw CSV. Path must be changed if you're not on Dara's laptop.
+head.data = import_data("~/projects/Sharkduino/sharkduino_R_analysis/data/tmp-data.csv");
 # Dataset Name, for pretty titles
-head.datasetName = "Walking to Get the Laundry"
-
+head.datasetName = "Shark 2017"
 print(head.data);
 
-# this function lets you sample a vector obj at every nth point, 
-# so long graphs don't take forever to render. 
-# Make sure to update your sampling rate if you're using subsampling!
-subsample = function(obj, ssres=1) {
-  return(obj[seq(1, length(obj), ssres)])
-}
+# Alias ss.simpleszzz from subsample.R
+subsample = ss.simple
 
 clamp = function(vec, LB=-Inf, UB=Inf) pmax( LB, pmin( vec, UB))
 
@@ -49,9 +44,9 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   # Scaling stuff.
   myLims = list(
-    c(-4.0, 4.0),    # Accelerometer X
-    c(-4.0, 4.0),    # Accelerometer Y
-    c(-4.0, 4.0),    # Accelerometer Z
+    c(-2.0, 2.0),    # Accelerometer X
+    c(-2.0, 2.0),    # Accelerometer Y
+    c(-2.0, 2.0),    # Accelerometer Z
     c(-1000,  1000), # Gyroscope X
     c(-1000,  1000), # Gyroscope Y
     c(-1000,  1000)  # Gyroscope Z
@@ -87,9 +82,7 @@ ui <- fluidPage(
   fluidRow(
     plotOutput("sharkPlot", height="450px")
   ),
-  fluidRow(
-    plotOutput("sharkPlot2", height="450px")
-  ),
+
   fluidRow(
     column(2, offset = 1,
            selectInput("ds", "Data Series:",
