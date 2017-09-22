@@ -1,11 +1,8 @@
 # imports
-require("data.table") # Faster data import and manipulation
-require("fasttime") # Faster data import and manipulation
 require("ggplot2") # for pretty plots
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
 
-source(".Rprofile")
 source("packages/import_data.R")
 source("packages/subsample.R")
 
@@ -72,9 +69,10 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
 # Name of dataset (for plot titles)
 head.datasetName = "07/29 Sandbar (Scratch)"
 # Which points to plot?
-head.dataRange = 810000:811500
+head.dataRange = 10000:11500
 # subsampling resolution?
 head.ssres = 1
+head.data = data
 
 # Base list for plots
 plots = as.list(1:6)
@@ -99,7 +97,7 @@ plotPanel = plot_grid(
   plots[[3]], 
   plots[[4]],
   plots[[5]],
-  plots[[6]],labels = "AUTO", ncol = 1, align = "v")
+  plots[[6]], labels = "AUTO", ncol = 1, align = "v")
 
 #dev.off()
 
