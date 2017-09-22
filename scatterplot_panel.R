@@ -8,7 +8,7 @@ source("packages/subsample.R")
 
 # Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
 # then edit the following line to reference it.
-data = import_data("data/tmp-data.csv", legacy=F)
+data = import_data("data/backpack_data.csv", legacy=F)
 
 
 # this function lets you sample a vector obj at every nth point, 
@@ -69,7 +69,7 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
 # Name of dataset (for plot titles)
 head.datasetName = "07/29 Sandbar (Scratch)"
 # Which points to plot?
-head.dataRange = 10000:11500
+head.dataRange = 10000:20000
 # subsampling resolution?
 head.ssres = 1
 head.data = data
@@ -87,19 +87,26 @@ plots = lapply(
 )
 
 
-filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, " ScatterPanel_window_cow.png", sep="")))
+filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, " ScatterPanel_window_cow", sep="")))
 
-# output to PDF
+# output to PNG
 #png(filename, height=1920, width=1080)
-plotPanel = plot_grid(
-  plots[[1]],
-  plots[[2]],
-  plots[[3]], 
-  plots[[4]],
-  plots[[5]],
-  plots[[6]], labels = "AUTO", ncol = 1, align = "v")
+# plotPanel = plot_grid(
+#   plots[[1]],
+#   plots[[2]],
+#   plots[[3]], 
+#   plots[[4]],
+#   plots[[5]],
+#   plots[[6]], labels = "AUTO", ncol = 1, align = "v")
 
 #dev.off()
+for (i in 1:6) {
+  ggsave(
+    paste("plots/", filename, "_", as.character(i),".png", sep = ""),
+    plots[[i]], 
+    dpi= 192,
+    width=24,
+    height=2.5)
+}
 
-save_plot(paste("plots/", filename, sep = ""), plotPanel, ncol=1, nrow=6, base_aspect_ratio = 2, base_height = 3)
 
