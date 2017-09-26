@@ -6,15 +6,26 @@ require("cowplot") # for arranging plots in grids
 source("packages/import_data.R")
 source("packages/subsample.R")
 
-# Read in interpolated CSV. Place your interpolated CSV file in the data subdirectory,
-# then edit the following line to reference it.
-data = import_data("data/backpack_data.csv", legacy=F)
+# ------------------------------------------------------------------------------
+# Configuration
+# ------------------------------------------------------------------------------
+# Path to CSV file (change "data/myData.csv" to point to where your data is)
+data = import_data("data/myData.csv", legacy=F)
+
+# Name of dataset (for plot titles)
+head.datasetName = "Enter dataset name here"
+
+# Range of points to plot
+head.dataRange = 1:nrow(data)
+
+# subsampling resolution
+head.ssres = 10
+# ------------------------------------------------------------------------------
 
 
 # this function lets you sample a vector obj at every nth point, 
 # so long graphs don't take forever to render. 
-# Make sure to update your sampling rate if you're using subsampling!
-subsample = ss
+subsample = ss.simple
 
 # Function for making our plots (with lapply)
 makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow(data), ssres = 1) {
@@ -25,88 +36,89 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
     paste("Accelerometer Z Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep=""),
     paste("Gyro X Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep=""),
     paste("Gyro Y Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep=""),
-    paste("Gyro Z Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep="")
+    paste("Gyro Z Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep=""),
+    paste("ODBA Data for ", datasetName, " Dataset (SS: 1/", ssres, ")", sep="")
   )
   
   ylabs = c(
-    "Accelerometer X-Axis (Gs)",
-    "Accelerometer Y-Axis (Gs)",
-    "Accelerometer Z-Axis (Gs)",
+    "Accel. X-Axis (Gs)",
+    "Accel. Y-Axis (Gs)",
+    "Accel. Z-Axis (Gs)",
     expression("Gyro X-Axis ("*degree*"/s)"),
     expression("Gyro Y-Axis ("*degree*"/s)"),
-    expression("Gyro Z-Axis ("*degree*"/s)")
+    expression("Gyro Z-Axis ("*degree*"/s)"),
+    "ODBA (Gs)"
   )
   
   myLims = list(
-    c(-1.2, -0.8),
-    c(-0.1,  0.3),
-    c(-0.4, -0.0),
-    c(-100,  100),
-    c(-100,  100),
-    c(-100,  100)
+    c(NA, NA),
+    c(NA, NA),
+    c(NA, NA),
+    c(NA, NA),
+    c(NA, NA),
+    c(NA, NA),
+    c(NA, NA)
   )
+  
+  if (ds <= 6) {
+     ypts = data[dataRange][[ds]]
+  } else if (ds == 7) {
+    ypts = data[dataRange][[1]] + data[dataRange][[2]] + data[dataRange][[3]]
+  } else {
+    stop(paste("Bad Data Series value:", ds, "- needs a value 1-7."))
+  }
   
   # Make plot with GGPlot2
   myPlot <<- ggplot(
     data.frame(
       dates = subsample(data[dataRange][[7]], ssres),
-      series = subsample(data[dataRange][[ds]], ssres)
+      series = ss(ypts, ssres)
     )) +
-    geom_line(aes(x=dates, y=series)) +
+    geom_line(aes(x=dates, y=series), size=.2) +
     labs(
       x="Time (hh:mm)", 
       y=ylabs[ds], 
       title=titles[ds] 
     ) + 
     background_grid(major = 'xy', minor = "none") + 
-    scale_x_datetime(labels = date_format("%H:%M:%S")) +
-    ylim(myLims[[ds]])
+    scale_x_datetime(breaks = date_breaks("5 mins"), labels = date_format("%H:%M"), expand=c(0,0)) + 
+    scale_y_continuous(limits = c(mean(ypts)-10*sd(ypts), mean(ypts)+10*sd(ypts)), expand=c(-0.1,0)) + 
+    theme(axis.text=element_text(size=9), axis.title=element_text(size=12,face="bold"))
   
   return(myPlot)
 }
 
-## Array of scatterplots for a given dataset
-# Name of dataset (for plot titles)
-head.datasetName = "07/29 Sandbar (Scratch)"
-# Which points to plot?
-head.dataRange = 10000:20000
-# subsampling resolution?
-head.ssres = 1
-head.data = data
 
-# Base list for plots
-plots = as.list(1:6)
 
+# make list of plots
 plots = lapply(
-  1:6, 
+  1:7, 
   makeScatterPane, 
-  data = head.data, 
+  data = data, 
   datasetName = head.datasetName, 
   dataRange = head.dataRange, 
   ssres = head.ssres
 )
 
+filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
 
-filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, " ScatterPanel_window_cow", sep="")))
+axes = c(
+  "ax",
+  "ay",
+  "az",
+  "gx",
+  "gy",
+  "gz",
+  "ODBA"
+)
 
-# output to PNG
-#png(filename, height=1920, width=1080)
-# plotPanel = plot_grid(
-#   plots[[1]],
-#   plots[[2]],
-#   plots[[3]], 
-#   plots[[4]],
-#   plots[[5]],
-#   plots[[6]], labels = "AUTO", ncol = 1, align = "v")
-
-#dev.off()
-for (i in 1:6) {
+for (i in 1:7) {
   ggsave(
-    paste("plots/", filename, "_", as.character(i),".png", sep = ""),
+    paste("plots/", filename, "_", axes[i], ".png", sep = ""),
     plots[[i]], 
-    dpi= 192,
-    width=24,
-    height=2.5)
+    dpi= 240,
+    width=nrow(data)/25/300,
+    height=2.5,
+    limitsize = FALSE
+  )
 }
-
-
