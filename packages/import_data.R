@@ -1,7 +1,7 @@
 require("data.table")
 require("fasttime")
 
-import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE) {
+import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, force = FALSE) {
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
   # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
@@ -19,6 +19,13 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
   # separate files for them.
   pos.data = interp.data[,1:7]
+  
+  # Throw out data if there are fewer than 25 rows
+  if (nrow(pos.data) <= 25 && force == TRUE) {
+    print("less than 25 samples found - skipping import - use force flag to override this")
+    return(NA)
+  }
+  
   
   # Process gyro data according to tag series
   if (legacy == FALSE) {
