@@ -7,6 +7,35 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
   raw.data[, date_time := fastPOSIXct(raw.data[, date_time])] 
   
+  #these functions check that the raw.data table has at least 2 values in the datetime column,
+  #with rows between them that aren't NA in columns 1-6.
+  dataframe<-raw.data$date_time
+  count=0
+  for (i in 1:length(dataframe)){
+    if (!is.na(dataframe[i])){
+      count = count + 1
+    }
+    if (count==2){
+      break
+    }
+  }
+  
+  if (count <2){
+    print("less than 2 values in the datetime column.")
+    return(NA)
+  }
+  
+  if(all(is.na(raw.data[,1:6]))){
+    print("Rows between date_rows are NA in columns 1-6.")
+    return(NA)
+  }
+  
+  # Throw out data if there are fewer than 25 rows
+  #if (nrow(raw.data) <= 25 && force == FALSE) {
+   # print("less than 25 samples found - skipping import - use force flag to override this")
+    #return(NA)
+  #} 
+  
   # interpolate dates
   raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
   # delete time-only rows
@@ -19,12 +48,6 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
   # separate files for them.
   pos.data = interp.data[,1:7]
-  
-  # Throw out data if there are fewer than 25 rows
-  if (nrow(pos.data) <= 25 && force == TRUE) {
-    print("less than 25 samples found - skipping import - use force flag to override this")
-    return(NA)
-  }
   
   
   # Process gyro data according to tag series
