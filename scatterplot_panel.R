@@ -2,6 +2,7 @@
 require("ggplot2") # for pretty plots
 require("scales") # for better scales
 require("cowplot") # for arranging plots in grids
+require("RcppRoll")
 
 source("packages/import_data.R")
 source("packages/subsample.R")
@@ -62,8 +63,16 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   if (ds <= 6) {
      ypts = data[dataRange][[ds]]
+     plot.ylim = c(mean(ypts)-10*sd(ypts), mean(ypts)+10*sd(ypts))
   } else if (ds == 7) {
-    ypts = data[dataRange][[1]] + data[dataRange][[2]] + data[dataRange][[3]]
+    win.length = 50 # rolling mean window length
+    rollx = roll_mean(data[dataRange][[1]], n = win.length, fill = c(0))
+    rolly = roll_mean(data[dataRange][[2]], n = win.length, fill = c(0))
+    rollz = roll_mean(data[dataRange][[3]], n = win.length, fill = c(0))
+    abs.dyn.a = abs(data[,1:3] - data.table(rollx, rolly, rollz))
+    
+    ypts = abs.dyn.a[dataRange][[1]] + abs.dyn.a[dataRange][[2]] + abs.dyn.a[dataRange][[3]]
+    plot.ylim = c(-0.1, mean(ypts)+12*sd(ypts))
   } else {
     stop(paste("Bad Data Series value:", ds, "- needs a value 1-7."))
   }
@@ -82,7 +91,7 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
     ) + 
     background_grid(major = 'xy', minor = "none") + 
     scale_x_datetime(breaks = date_breaks("5 mins"), labels = date_format("%H:%M"), expand=c(0,0)) + 
-    scale_y_continuous(limits = c(mean(ypts)-10*sd(ypts), mean(ypts)+10*sd(ypts)), expand=c(-0.1,0)) + 
+    scale_y_continuous(limits = plot.ylim, expand=c(-0.1,0)) + 
     theme(axis.text=element_text(size=9), axis.title=element_text(size=12,face="bold"))
   
   return(myPlot)
@@ -113,6 +122,7 @@ axes = c(
 )
 
 for (i in 1:7) {
+  print(paste("Saving plot for", axes[i], "axis..."))
   ggsave(
     paste("plots/", filename, "_", axes[i], ".png", sep = ""),
     plots[[i]], 
@@ -122,3 +132,5 @@ for (i in 1:7) {
     limitsize = FALSE
   )
 }
+
+print("All plots saved.")
