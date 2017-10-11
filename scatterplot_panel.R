@@ -24,10 +24,6 @@ head.ssres = 10
 # ------------------------------------------------------------------------------
 
 
-# this function lets you sample a vector obj at every nth point, 
-# so long graphs don't take forever to render. 
-subsample = ss.simple
-
 # Function for making our plots (with lapply)
 makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow(data), ssres = 1) {
   # Titles/labels/limits for the various plots
@@ -80,7 +76,7 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   # Make plot with GGPlot2
   myPlot <<- ggplot(
     data.frame(
-      dates = subsample(data[dataRange][[7]], ssres),
+      dates = ss.simple(data[dataRange][[7]], ssres),
       series = ss(ypts, ssres)
     )) +
     geom_line(aes(x=dates, y=series), size=.2) +
