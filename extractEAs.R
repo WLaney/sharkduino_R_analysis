@@ -1,17 +1,10 @@
-
-library.path <- cat(.libPaths())
-#.libPaths("/Library/Frameworks/R.framework/Versions/3.3/Resources/library") 
-library("data.table", lib.loc = library.path)
-library("fasttime", lib.loc = library.path)
-
-
 source("packages/import_data.R")
 source("packages/madgwick.R")
 
 extract.qs = function(data, beta = 0.7, frequency = 25, init.q = c(1, 0, 0, 0)) {
   data.length = nrow(data)
   
-  ql = l <- vector("list", data.length + 1)
+  ql = vector("list", data.length + 1)
   ql[[1]] = as.list(init.q)
   
   for (s in 1:data.length) {

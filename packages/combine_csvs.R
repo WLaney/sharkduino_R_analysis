@@ -4,18 +4,22 @@ combine.csvs = function(path="", write = TRUE, out.path = "") {
 
 file.names <- paste(path, dir(path, pattern ="data.csv"), sep="")
 
-  out.file=NA
+  out.df=NA
   for(i in 1:length(file.names)){
     dataset <- import_data(file.names[i], legacy = F)
-    if (class(out.file)[1]=="logical"){
-      out.file=dataset
+    if (class(out.df)[1]=="logical"){
+      out.df=dataset
     }
     else if(class(dataset)[1]=="logical"){}
     else{
-    out.file <- rbind(out.file, dataset)
+    out.df <- rbind(out.df, dataset)
     }
   }
-  if (write == TRUE) fwrite(out.file, file = out.path)
+  if (write == TRUE) { 
+    fwrite(out.df, file = out.path)
+  } else {
+    return(out.df)
+  }
 }
 
 
