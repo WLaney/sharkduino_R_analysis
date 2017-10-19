@@ -17,13 +17,51 @@ dataset.dirs <- list.dirs(path=base.dir, full.names = TRUE)
 sapply(dataset.dirs, make.summary.plots)
 
 
-make.summary.plots(data.dir) {
+make.summary.plots = function(data.dir) {
   csv.name =
   combine.csvs(
     path = paste(data.dir, "/csvs/data", sep=""),
     out.path = paste(data.dir, "/", csv.name, sep="")
+  )
+    
+  # make list of plots
+  plots = lapply(
+    1:7, 
+    makeScatterPane, 
+    data = data, 
+    datasetName = head.datasetName, 
+    dataRange = head.dataRange, 
+    ssres = head.ssres
+  )
+    
+  filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
+    
+  axes = c(
+    "ax",
+    "ay",
+    "az",
+    "gx",
+    "gy",
+    "gz",
+    "ODBA"
+  )
+    
+  for (i in 1:7) {
+    print(paste("Saving plot for", axes[i], "axis..."))
+    ggsave(
+      paste("plots/", filename, "_", axes[i], ".png", sep = ""),
+      plots[[i]], 
+      dpi= 240,
+      width=nrow(data)/25/300,
+      height=2.5,
+      limitsize = FALSE
+    )
+  }
+    
+  print("All plots saved.")
   
 }
+
 # ------------------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------------------
@@ -109,41 +147,3 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   return(myPlot)
 }
-
-
-
-# make list of plots
-plots = lapply(
-  1:7, 
-  makeScatterPane, 
-  data = data, 
-  datasetName = head.datasetName, 
-  dataRange = head.dataRange, 
-  ssres = head.ssres
-)
-
-filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
-
-axes = c(
-  "ax",
-  "ay",
-  "az",
-  "gx",
-  "gy",
-  "gz",
-  "ODBA"
-)
-
-for (i in 1:7) {
-  print(paste("Saving plot for", axes[i], "axis..."))
-  ggsave(
-    paste("plots/", filename, "_", axes[i], ".png", sep = ""),
-    plots[[i]], 
-    dpi= 240,
-    width=nrow(data)/25/300,
-    height=2.5,
-    limitsize = FALSE
-  )
-}
-
-print("All plots saved.")
