@@ -1,13 +1,13 @@
 require("data.table")
 require("fasttime")
 
-import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, force = FALSE) {
+import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, force = FALSE, legacy_interp = FALSE) {
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
-  # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
+  # Dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
   raw.data[, date_time := fastPOSIXct(raw.data[, date_time])] 
   
-  # these lines check that the raw.data table has at least 2 values in the datetime column,
+  # These lines check that the raw.data table has at least 2 values in the datetime column,
   # with rows between them that aren't NA in columns 1-6.
   count=0
   for (i in 1:nrow(raw.data)){
@@ -28,14 +28,30 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
     print("WARNING: No data rows in input file")
     return(NA)
   }
-  
-  # interpolate dates
-  raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
-  # delete time-only rows
-  interp.data = raw.data[!is.na(ax)]
+  if (legacy_interp == TRUE) {
+    # Interpolate dates
+    raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
+    # Delete time-only rows
+    interp.data = raw.data[!is.na(ax)]
+  } else {
+    # Assign date rows to the previous data read (since those readings happen virtually simultaneously)
+    raw.data[2:(nrow(raw.data)-1), date_time := raw.data[3:nrow(raw.data),7]]
+    # Remove all time rows except the first
+    interp.data = raw.data[c(TRUE, !is.na(ax[2:length(ax)]))]
+    # Interpolate dates
+    interp.data[, date_time := as.POSIXct(approx(
+      interp.data[, date_time], 
+      xout=1:nrow(interp.data))$y, 
+      origin = "1970-01-01")] 
+    # Remove any remaining time rows
+    interp.data = interp.data[!is.na(ax)]
+  }
+
   # Throw warning if more than 10 seconds of uninterpolated data.
-  if (nrow(raw.data[is.na(date_time)]) > 250) print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ").", sep = ""))
-  # delete rows with no valid date interp.
+  if (nrow(raw.data[is.na(date_time)]) > 250) {
+    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ").", sep = ""))
+  }
+  # Delete rows with no valid date interp.
   interp.data = interp.data[!is.na(date_time)]
   
   # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
