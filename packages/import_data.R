@@ -7,12 +7,11 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
   raw.data[, date_time := fastPOSIXct(raw.data[, date_time])] 
   
-  #these functions check that the raw.data table has at least 2 values in the datetime column,
-  #with rows between them that aren't NA in columns 1-6.
-  dataframe<-raw.data$date_time
+  # these lines check that the raw.data table has at least 2 values in the datetime column,
+  # with rows between them that aren't NA in columns 1-6.
   count=0
-  for (i in 1:length(dataframe)){
-    if (!is.na(dataframe[i])){
+  for (i in 1:nrow(raw.data)){
+    if (!is.na(raw.data[i,7])){
       count = count + 1
     }
     if (count==2){
@@ -21,20 +20,14 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   }
   
   if (count <2){
-    print("less than 2 values in the datetime column.")
+    print("WARNING: Fewer than 2 values in the datetime column.")
     return(NA)
   }
   
   if(all(is.na(raw.data[,1:6]))){
-    print("Rows between date_rows are NA in columns 1-6.")
+    print("WARNING: No data rows in input file")
     return(NA)
   }
-  
-  # Throw out data if there are fewer than 25 rows
-  #if (nrow(raw.data) <= 25 && force == FALSE) {
-   # print("less than 25 samples found - skipping import - use force flag to override this")
-    #return(NA)
-  #} 
   
   # interpolate dates
   raw.data[, date_time := as.POSIXct(approx(raw.data[, date_time], xout=1:nrow(raw.data))$y, origin = "1970-01-01")] 
@@ -74,6 +67,11 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   } else {
     # Throw away bad gyro data from v1.x tags
     pos.data = pos.data[,c(1,2,3,7)]
+  }
+  
+  # Warn if processed data.table is empty
+  if (all(is.na(pos.data))) {
+    print("WARNING: Processed dataset appears to be blank. Check if your input file is correctly formatted.")
   }
   
   # path splitting helper function
