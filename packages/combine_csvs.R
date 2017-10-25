@@ -1,7 +1,7 @@
 #=============================================================================================
 # combine_csvs.R
 #=============================================================================================
-# Just a function to combine Sharkduino csvs into one long file
+# Just a function to combine Sharkduino CSVs into one long file
 # Written for Sharkduino by Dara Kharabi and Hanqiu Peng
 #=============================================================================================
 
