@@ -21,24 +21,36 @@ head.dataRange = NA
 head.ssres = 10
 # ------------------------------------------------------------------------------
 
-dataset.dirs <- list.dirs(path=base.dir, full.names = TRUE)
-
-sapply(dataset.dirs, make.summary.plots)
-
 make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
-  csv.name = paste(tail(strsplit(data.dir,"/"), n=1), "_combined.csv", sep="")
+  ds.name = tail(strsplit(data.dir,"/")[[1]], n=1)
+  print(paste("Now generating plots for dataset:", ds.name))
+  
+  csv.name = paste(ds.name, "_combined.csv", sep="")
   csv.path = paste(data.dir, "/", csv.name, sep="")
-  combine.csvs(
-    path = paste(data.dir, "/csvs/data", sep=""),
-    out.path = csv.path
+  skip.plot.gen = FALSE
+  combine.success = tryCatch(
+    combine.csvs(
+      path = paste(data.dir, "/csvs/data", sep=""),
+      out.path = csv.path
+    ),
+    warning = function(w) {
+      # if combining csvs fails
+      # warning(w)
+      return(FALSE)
+    }
   )
+  
+  if (!is.null(combine.success)){
+    print("....Failed to combine csvs, skipping this folder.")
+    return()
+  }
   
   # we can have combine.csvs return a dataframe, but instead the script is writing and 
   # then reading the data to ensure the process completed successfully.
   data = import_data(csv.path)
   
   if (is.na(dataRange)) {
-    daraRange = 1:nrow(data)
+    dataRange = 1:nrow(data)
   }
     
   # make list of plots
@@ -46,12 +58,12 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
     1:7, 
     makeScatterPane, 
     data = data, 
-    datasetName = csv.name, 
+    datasetName = ds.name, 
     dataRange = dataRange, 
     ssres = ssres
   )
     
-  filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
+  filename = gsub("/", "", gsub(" ", "_", paste(ds.name, "_summary", sep="")))
     
   axes = c(
     "ax",
@@ -62,11 +74,18 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
     "gz",
     "ODBA"
   )
+  
+  # create plots dir if needed
+  plots.dir = paste(data.dir, "/plots", sep="")
+  if (!dir.exists(plots.dir)) {
+    print("..../plots/ directory doesn't exist. Creating one now.")
+    dir.create(plots.dir)
+  }
     
   for (i in 1:7) {
-    print(paste("Saving plot for", axes[i], "axis..."))
+    print(paste("....Saving plot for", axes[i], "axis."))
     ggsave(
-      paste("plots/", filename, "_", axes[i], ".png", sep = ""),
+      paste(data.dir, "/plots/", filename, "_", axes[i], ".png", sep = ""),
       plots[[i]], 
       dpi= 240,
       width=nrow(data)/25/300,
@@ -75,7 +94,7 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
     )
   }
     
-  print("All plots saved.")
+  print("....All plots saved.")
   
 }
 
@@ -147,3 +166,12 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   return(myPlot)
 }
+
+
+# get directories in base dir
+dataset.dirs <- dir(path=base.dir, full.names = TRUE)
+# only directories, please
+dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
+
+sapply(dataset.dirs, make.summary.plots)
+

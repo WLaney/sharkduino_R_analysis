@@ -2,6 +2,7 @@
 # Madgwick.R
 #=============================================================================================
 # R language port of https://github.com/PaulStoffregen/MadgwickAHRS
+# Plus helper functions for dealing with 3D rotations, Euler angles, and quaternions
 # Written for Sharkduino by Dara Kharabi
 #=============================================================================================
 

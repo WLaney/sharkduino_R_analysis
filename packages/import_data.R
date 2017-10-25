@@ -1,11 +1,23 @@
+#=============================================================================================
+# import_data.R
+#=============================================================================================
+# Importers for Sharkduino .CSV files
+# Written for Sharkduino by William Laney, Dara Kharabi, and Hanqiu Peng
+#=============================================================================================
+
 require("data.table")
 require("fasttime")
 
-# path splitting helper function
-split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
+#-------------------------------------------------------------------------------------------
+# Path splitting helper function
 
+split_path <- function(x) {
+  if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
+}
 
-# importer for raw CSV files
+#-------------------------------------------------------------------------------------------
+# Importer for raw CSV files
+
 import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, legacy_interp = FALSE) {
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
@@ -63,7 +75,6 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   # separate files for them.
   pos.data = interp.data[,1:7]
   
-  
   # Process gyro data according to tag series
   if (legacy == FALSE) {
     
@@ -107,8 +118,9 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   return(pos.data)
 }
 
+#-------------------------------------------------------------------------------------------
+# Importer for CSV files already processed and written by import_data
 
-# importer for CSV files already processed and written by import_data
 import.data.cleaned <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE) {
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)

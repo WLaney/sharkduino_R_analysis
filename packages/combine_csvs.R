@@ -1,10 +1,20 @@
+#=============================================================================================
+# combine_csvs.R
+#=============================================================================================
+# Just a function to combine Sharkduino csvs into one long file
+# Written for Sharkduino by Dara Kharabi and Hanqiu Peng
+#=============================================================================================
+
 source("packages/import_data.R")
+
+#-------------------------------------------------------------------------------------------
+# Combines multiple csvs and either writes or returns the resulting file/data.frame
 
 combine.csvs = function(path="", out.path = "", write = TRUE, return.df = FALSE, combine.cleaned = FALSE) {
 
   file.names <- list.files(path, pattern ="data.csv", full.names = TRUE)
   if (length(file.names) == 0) {
-    print(paste("WARNING: No csvs detected in", path, "-- returning NA."))
+    warning(paste("No csvs detected in", path, "-- returning NA."))
     return(NA)
   }
 
