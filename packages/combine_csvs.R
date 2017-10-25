@@ -1,6 +1,6 @@
 source("packages/import_data.R")
 
-combine.csvs = function(path="", write = TRUE, return.df = FALSE, out.path = "") {
+combine.csvs = function(path="", out.path = "", write = TRUE, return.df = FALSE, combine.cleaned = FALSE) {
 
   file.names <- list.files(path, pattern ="data.csv", full.names = TRUE)
   if (length(file.names) == 0) {
@@ -10,7 +10,12 @@ combine.csvs = function(path="", write = TRUE, return.df = FALSE, out.path = "")
 
   out.df=NA
   for(i in 1:length(file.names)){
-    dataset <- import_data(file.names[i], legacy = F)
+    if (combine.cleaned == TRUE) {
+      dataset = import.data.cleaned(file.names[i], legacy = F)
+    } else {
+      dataset = import_data(file.names[i], legacy = F)
+    }
+    
     if (class(out.df)[1]=="logical"){
       out.df=dataset
     }
@@ -26,5 +31,7 @@ combine.csvs = function(path="", write = TRUE, return.df = FALSE, out.path = "")
     return(out.df)
   }
 }
+
+
 
 
