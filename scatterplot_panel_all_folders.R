@@ -8,30 +8,47 @@ source("packages/import_data.R")
 source("packages/combine_csvs.R")
 source("packages/subsample.R")
 
-# I've created a folder "my_files" that is...
-base.dir = "/Users/penghanqiu/Google Drive/Data"
+# ------------------------------------------------------------------------------
+# Configuration
+# ------------------------------------------------------------------------------
+# Path to base folder (the folder containing the dataset folders you want to process)
+base.dir = "/Users/dara/Projects/Sharkduino/sharkduino_R_analysis/data"
 
-# populated by three subfolders
+# Range of points to plot (set to NA to plot the whole dataset)
+head.dataRange = NA
+
+# subsampling resolution
+head.ssres = 10
+# ------------------------------------------------------------------------------
+
 dataset.dirs <- list.dirs(path=base.dir, full.names = TRUE)
 
 sapply(dataset.dirs, make.summary.plots)
 
-
-make.summary.plots = function(data.dir) {
-  csv.name =
+make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
+  csv.name = paste(tail(strsplit(data.dir,"/"), n=1), "_combined.csv", sep="")
+  csv.path = paste(data.dir, "/", csv.name, sep="")
   combine.csvs(
     path = paste(data.dir, "/csvs/data", sep=""),
-    out.path = paste(data.dir, "/", csv.name, sep="")
+    out.path = csv.path
   )
+  
+  # we can have combine.csvs return a dataframe, but instead the script is writing and 
+  # then reading the data to ensure the process completed successfully.
+  data = import_data(csv.path)
+  
+  if (is.na(dataRange)) {
+    daraRange = 1:nrow(data)
+  }
     
   # make list of plots
   plots = lapply(
     1:7, 
     makeScatterPane, 
     data = data, 
-    datasetName = head.datasetName, 
-    dataRange = head.dataRange, 
-    ssres = head.ssres
+    datasetName = csv.name, 
+    dataRange = dataRange, 
+    ssres = ssres
   )
     
   filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
@@ -61,23 +78,6 @@ make.summary.plots = function(data.dir) {
   print("All plots saved.")
   
 }
-
-# ------------------------------------------------------------------------------
-# Configuration
-# ------------------------------------------------------------------------------
-# Path to CSV file (change "data/myData.csv" to point to where your data is)
-data = import_data("data/myData.csv", legacy=F)
-
-# Name of dataset (for plot titles)
-head.datasetName = "Enter dataset name here"
-
-# Range of points to plot
-head.dataRange = 1:nrow(data)
-
-# subsampling resolution
-head.ssres = 10
-# ------------------------------------------------------------------------------
-
 
 # Function for making our plots (with lapply)
 makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow(data), ssres = 1) {
