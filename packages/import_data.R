@@ -1,7 +1,12 @@
 require("data.table")
 require("fasttime")
 
-import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, force = FALSE, legacy_interp = FALSE) {
+# path splitting helper function
+split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
+
+
+# importer for raw CSV files
+import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE, legacy_interp = FALSE) {
   # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
   raw.data = fread(data_file, sep=",", header=TRUE)
   # Dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
@@ -48,8 +53,8 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   }
 
   # Throw warning if more than 10 seconds of uninterpolated data.
-  if (nrow(raw.data[is.na(date_time)]) > 250) {
-    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(raw.data[is.na(date_time)]), ").", sep = ""))
+  if (nrow(interp.data[is.na(date_time)]) > 250) {
+    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(interp.data[is.na(date_time)]), ").", sep = ""))
   }
   # Delete rows with no valid date interp.
   interp.data = interp.data[!is.na(date_time)]
@@ -90,8 +95,67 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
     print("WARNING: Processed dataset appears to be blank. Check if your input file is correctly formatted.")
   }
   
-  # path splitting helper function
-  split_path <- function(x) if (dirname(x)==x) x else c(basename(x),split_path(dirname(x)))
+  filename = paste(strsplit(split_path(data_file)[1], "[.]")[[1]][1], "_processed", sep = "")
+  
+  if (save_csv == TRUE) {
+    fwrite(pos.data, file = paste(filename, ".csv", sep = ""))
+  }
+  if (save_rdata == TRUE) {
+    save(pos.data, file = paste(filename, ".RData", sep = ""))
+  }
+  
+  return(pos.data)
+}
+
+
+# importer for CSV files already processed and written by import_data
+import.data.cleaned <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy = FALSE) {
+  # Read in datafile (an uninterpolated CSV). fread for speed/data.table flexibility.
+  raw.data = fread(data_file, sep=",", header=TRUE)
+  # Dates as POSIXct date objects (format = "%Y-%m-%d %H:%M:%OS")
+  raw.data[, date_time := fastPOSIXct(raw.data[, date_time])] 
+  
+  # These lines check that the raw.data table has at least 2 values in the datetime column,
+  # with rows between them that aren't NA in columns 1-6.
+  count=0
+  for (i in 1:nrow(raw.data)){
+    if (!is.na(raw.data[i,7])){
+      count = count + 1
+    }
+    if (count==2){
+      break
+    }
+  }
+  
+  if (count <2){
+    print("WARNING: Fewer than 2 values in the datetime column.")
+    return(NA)
+  }
+  
+  if(all(is.na(raw.data[,1:6]))){
+    print("WARNING: No data rows in input file")
+    return(NA)
+  }
+
+  # Throw warning if more than 10 seconds of uninterpolated data.
+  if (nrow(interp.data[is.na(date_time)]) > 250) {
+    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(interp.data[is.na(date_time)]), ").", sep = ""))
+  }
+
+  # Process gyro data according to tag series
+  if (legacy == FALSE) {
+
+    # check if gyro data has missing rows
+    if (anyNA(interp.data[,4:6])) {
+      print("WARNING: Sparse gyro data detected. doung nothing.")
+    }
+    
+  } 
+  
+  # Warn if processed data.table is empty
+  if (all(is.na(pos.data))) {
+    print("WARNING: Processed dataset appears to be blank. Check if your input file is correctly formatted.")
+  }
   
   filename = paste(strsplit(split_path(data_file)[1], "[.]")[[1]][1], "_processed", sep = "")
   
