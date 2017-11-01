@@ -5,24 +5,98 @@ require("cowplot") # for arranging plots in grids
 require("RcppRoll")
 
 source("packages/import_data.R")
+source("packages/combine_csvs.R")
 source("packages/subsample.R")
 
 # ------------------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------------------
-# Path to CSV file (change "data/myData.csv" to point to where your data is)
-data = import_data("data/myData.csv", legacy=F)
+# Path to base folder (the folder containing the dataset folders you want to process)
+base.dir = "/Users/dara/Projects/Sharkduino/sharkduino_R_analysis/data"
 
-# Name of dataset (for plot titles)
-head.datasetName = "Enter dataset name here"
-
-# Range of points to plot
-head.dataRange = 1:nrow(data)
+# Range of points to plot (set to NA to plot the whole dataset)
+head.dataRange = NA
 
 # subsampling resolution
 head.ssres = 10
 # ------------------------------------------------------------------------------
 
+make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
+  ds.name = tail(strsplit(data.dir,"/")[[1]], n=1)
+  print(paste("Now generating plots for dataset:", ds.name))
+  
+  csv.name = paste(ds.name, "_combined.csv", sep="")
+  csv.path = paste(data.dir, "/", csv.name, sep="")
+  skip.plot.gen = FALSE
+  combine.success = tryCatch(
+    combine.csvs(
+      path = paste(data.dir, "/csvs/data", sep=""),
+      out.path = csv.path
+    ),
+    warning = function(w) {
+      # if combining csvs fails
+      # warning(w)
+      return(FALSE)
+    }
+  )
+  
+  if (!is.null(combine.success)){
+    print("....Failed to combine csvs, skipping this folder.")
+    return()
+  }
+  
+  # we can have combine.csvs return a dataframe, but instead the script is writing and 
+  # then reading the data to ensure the process completed successfully.
+  data = import_data(csv.path)
+  
+  if (is.na(dataRange)) {
+    dataRange = 1:nrow(data)
+  }
+    
+  # make list of plots
+  plots = lapply(
+    1:7, 
+    makeScatterPane, 
+    data = data, 
+    datasetName = ds.name, 
+    dataRange = dataRange, 
+    ssres = ssres
+  )
+    
+  filename = gsub("/", "", gsub(" ", "_", paste(ds.name, "_summary", sep="")))
+    
+  axes = c(
+    "ax",
+    "ay",
+    "az",
+    "gx",
+    "gy",
+    "gz",
+    "ODBA"
+  )
+  
+  # create plots dir if needed
+  plots.dir = paste(data.dir, "/plots", sep="")
+  if (!dir.exists(plots.dir)) {
+    print("..../plots/ directory doesn't exist. Creating one now.")
+    dir.create(plots.dir)
+  }
+    
+  for (i in 1:7) {
+    print(paste("....Saving plot for", axes[i], "axis."))
+    ggsave(
+      paste(data.dir, "/plots/", filename, "_", axes[i], ".png", sep = ""),
+      plots[[i]], 
+      dpi= 240,
+      width=nrow(data)/25/300,
+      height=2.5,
+      limitsize = FALSE
+    )
+  }
+    
+  print("....All plots saved.")
+  
+}
 
 # Function for making our plots (with lapply)
 makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow(data), ssres = 1) {
@@ -58,8 +132,8 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   )
   
   if (ds <= 6) {
-     ypts = data[dataRange][[ds]]
-     plot.ylim = c(mean(ypts)-10*sd(ypts), mean(ypts)+10*sd(ypts))
+    ypts = data[dataRange][[ds]]
+    plot.ylim = c(mean(ypts)-10*sd(ypts), mean(ypts)+10*sd(ypts))
   } else if (ds == 7) {
     win.length = 50 # rolling mean window length
     rollx = roll_mean(data[dataRange][[1]], n = win.length, fill = c(0))
@@ -94,39 +168,10 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
 }
 
 
+# get directories in base dir
+dataset.dirs <- dir(path=base.dir, full.names = TRUE)
+# only directories, please
+dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
 
-# make list of plots
-plots = lapply(
-  1:7, 
-  makeScatterPane, 
-  data = data, 
-  datasetName = head.datasetName, 
-  dataRange = head.dataRange, 
-  ssres = head.ssres
-)
+sapply(dataset.dirs, make.summary.plots)
 
-filename = gsub("/", "", gsub(" ", "_", paste(head.datasetName, "_summary", sep="")))
-
-axes = c(
-  "ax",
-  "ay",
-  "az",
-  "gx",
-  "gy",
-  "gz",
-  "ODBA"
-)
-
-for (i in 1:7) {
-  print(paste("Saving plot for", axes[i], "axis..."))
-  ggsave(
-    paste("plots/", filename, "_", axes[i], ".png", sep = ""),
-    plots[[i]], 
-    dpi= 240,
-    width=nrow(data)/25/300,
-    height=2.5,
-    limitsize = FALSE
-  )
-}
-
-print("All plots saved.")
