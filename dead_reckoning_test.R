@@ -10,10 +10,10 @@ library('signal')
 # Read in data
 if (!(exists("raw_data") && exists("orientation"))) {
   raw_data <- import_data("data/tmp-data.csv")
-  orientation <- fread("data/tmp-eas.csv", sep=",", header=TRUE)
+  orientation <- fread("data/tmp-qs.csv", sep=",", header=TRUE)
   
-  raw_data <- raw_data[100000:130000,]
-  orientation <- orientation[30000:40000,]
+  raw_data <- raw_data[50000:55000,]
+  orientation <- orientation[1:4999]
   
   print("Orientation loaded.")
   # orientation <- read.csv("data/tmp-eas.csv", header=TRUE)
@@ -26,16 +26,17 @@ orient_clipped <- orientation[2:(dim(orientation)[1]),]
 # Rotate accelerometer-space acceleration into world-space normal vector.
 # There is probably a better way to use this with rotate.vec, but I don't
 # know R very well...
-world_normal <- rotate.df(accel$ax, accel$ay, accel$az, orient_clipped$yaw, orient_clipped$pitch, orient_clipped$roll)
+world_normal <- rotateQ.df.inv(accel$ax, accel$ay, accel$az, 
+                               orient_clipped$q0, orient_clipped$q1, orient_clipped$q2, orient_clipped$q3)
 
 # Highpass to remove gravity vector, hopefully
 filtFreq <- 1.0;
 myHPF <- butter(type="high", 3, filtFreq/25.0)
-world_acceleration <- data.table(filter(myHPF, world_normal$x),
-                                 filter(myHPF, world_normal$y),
-                                 filter(myHPF, world_normal$z))
+world_acceleration <- data.table(as.numeric((filter(myHPF, world_normal$x))),
+                                 as.numeric((filter(myHPF, world_normal$y))),
+                                 as.numeric((filter(myHPF, world_normal$z))))
 # filtdat = smooth(filtdat)
-double_integrate = function(x){cumsum(cumsum(x))}
+double_integrate = function(x){cumsum(cumsum(x*9.80665/(25^2)))}
 world_position <- data.table(double_integrate(world_acceleration[[1]]),
                              double_integrate(world_acceleration[[2]]),
                              double_integrate(world_acceleration[[3]]))
