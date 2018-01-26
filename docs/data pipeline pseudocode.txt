@@ -1,0 +1,28 @@
+#source a bunch of scripts
+
+rawCSVs = allRun(parseSRKs)
+combinedRawCSV = combine.csvs(rawCSVs)
+combinedCSV = import.csv(combinedRawCSV)
+write(combinedCSV)
+
+windowedFeatures = data.frame();
+windowedFeatures[:,1] = rollit(fun="feature1", combinedCSV)
+windowedFeatures[:,2] = rollit(fun="feature2", combinedCSV)
+windowedFeatures[:,3] = rollit(fun="feature3", combinedCSV)
+windowedFeatures[:,4] = rollit(fun="labels", combinedCSV)
+
+continuousFeatures = data.frame();
+continuousFeatures[:,1] = continuousFeature1(combinedCSV);
+# etc...
+
+windowedFeatures[:,5:(5+nrow(continuousFeatures))] = windowify(continuousFeatures);
+
+## Classifier
+# Shuffle features
+# Split into training and test set
+# Standardize features (by training set's std dev and mean)
+
+# Train classifier (SVM?) using training data
+# Get classifier's probabilities and predictions for the test set
+# Use probabilities to get ROC curves
+# Use predictions to get confusion matrix, precision, recall, accuracy, etc.
