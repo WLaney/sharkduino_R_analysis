@@ -9,23 +9,44 @@ require("zoo") #for rolling sums
 require("signal") # signal processing toolkit w/filters, etc
 require("RcppRoll") # for faster rolling sums
 require("pracma") #for finding peaks
+require("viridis") # colors
 
 source("packages/import_data.R")
 source("packages/subsample.R")
 
 # Import data
-myData = import_data("data.csv", legacy=F)
+data = import_data("/Users/dara/GDrive - WM/Animal Tag Lab Book/Data/20170828-v2.1a-(Other shark)/csvs/data//2017-8-28 14/47/55_21a _data.csv", legacy=F)
 
-# Fourier transform of z-axis accelerometer data
-fourier = abs(fft(myData[[3]][1000:2000]))^2
+ds = 6
+sample.rate = 25
+window.length = 30 * sample.rate
 
-# Testing this with a sine wave
-# values of two different sines at two different freqencies
-# fourier = abs(fft(sin(10 * (2 * pi) * x)))^2
+for (window.n in 100:120) {
+  myWindow = 1:window.length + (window.n * window.length)
+  # Fourier spectrum of z-axis accelerometer data
+  myspec = spectrum(data[[ds]][myWindow], plot=F, method="pgram")
 
-# Identify peaks above 0.25 Hz
-peaks = findpeaks(fourier, minpeakheight = 0.25, threshold = 0, npeaks = 0, sortstr = FALSE)
 
-# Graph
-qplot(0:499, (fourier)[1:500], geom="line", log = "y")
-#spectrum(fourier)
+  x = as.numeric(myspec$freq * sample.rate)
+  y = as.numeric(myspec$spec+.0001)
+  
+  # Identify peaks
+  peaks = findpeaks(y, npeaks=20, sortstr=T)
+  
+  if (is.null(peaks)){
+    print(paste("window", window.n,"is null"))
+    specPlot = NULL
+  } else {
+    # Graph
+    specPlot = qplot(x,y, geom="line", log="y") + 
+      geom_point(aes(x=x[peaks[,2]], y = peaks[,1], col=log(peaks[,1])) ) +
+      scale_x_continuous(breaks = 0:12) +
+      background_grid(major = "xy", minor = "y") +
+      scale_color_viridis()
+  }
+  
+  basePlot = qplot(data[[7]][myWindow], data[[ds]][myWindow], geom="line") +
+    scale_x_datetime(breaks = date_breaks("5 secs"), date_labels = "%H:%M:%S")
+  windowPlot = plot_grid(specPlot, basePlot, ncol=1)
+  ggsave(paste("plots/peaks_axis_", ds, "_window_", window.n, ".png", sep=""), windowPlot)
+}
