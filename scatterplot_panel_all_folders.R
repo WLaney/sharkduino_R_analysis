@@ -12,7 +12,7 @@ source("packages/subsample.R")
 # Configuration
 # ------------------------------------------------------------------------------
 # Path to base folder (the folder containing the dataset folders you want to process)
-base.dir = "/Users/dara/Projects/Sharkduino/sharkduino_R_analysis/data"
+base.dir = "/Users/dara/GDrive - WM/Animal Tag Lab Book/Data"
 
 # Range of points to plot (set to NA to plot the whole dataset)
 head.dataRange = NA
@@ -21,13 +21,12 @@ head.dataRange = NA
 head.ssres = 10
 # ------------------------------------------------------------------------------
 
-make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
+combine.data.csvs = function(data.dir) {
   ds.name = tail(strsplit(data.dir,"/")[[1]], n=1)
-  print(paste("Now generating plots for dataset:", ds.name))
-  
   csv.name = paste(ds.name, "_combined.csv", sep="")
   csv.path = paste(data.dir, "/", csv.name, sep="")
-  skip.plot.gen = FALSE
+  
+  print(paste("Now combining CSV for dataset:", ds.name))
   combine.success = tryCatch(
     combine.csvs(
       path = paste(data.dir, "/csvs/data", sep=""),
@@ -42,12 +41,19 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
   
   if (!is.null(combine.success)){
     print("....Failed to combine csvs, skipping this folder.")
-    return()
+    return(FALSE)
+  } else {
+    return(TRUE)
   }
+}
+
+make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
+  ds.name = tail(strsplit(data.dir,"/")[[1]], n=1)
+  csv.name = paste(ds.name, "_combined.csv", sep="")
+  csv.path = paste(data.dir, "/", csv.name, sep="")
   
-  # we can have combine.csvs return a dataframe, but instead the script is writing and 
-  # then reading the data to ensure the process completed successfully.
-  data = import_data(csv.path)
+  print(paste("Now generating plots for dataset:", ds.name))
+  data = import_data(csv.path, clean=TRUE)
   
   if (is.na(dataRange)) {
     dataRange = 1:nrow(data)
@@ -160,18 +166,31 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
       title=titles[ds] 
     ) + 
     background_grid(major = 'xy', minor = "none") + 
-    scale_x_datetime(breaks = date_breaks("5 mins"), labels = date_format("%H:%M"), expand=c(0,0)) + 
+    scale_x_datetime(breaks = date_breaks("5 mins"), date_labels = "%H:%M", expand=c(0,0)) + 
     scale_y_continuous(limits = plot.ylim, expand=c(-0.1,0)) + 
     theme(axis.text=element_text(size=9), axis.title=element_text(size=12,face="bold"))
   
   return(myPlot)
 }
 
+apply.data.pipeline = function(base.dir, func.list) {
+  # get directories in base dir
+  dataset.dirs <- dir(path=base.dir, full.names = TRUE)
+  # only directories, please
+  dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
+  
+  continue.flags = rep(TRUE, length(dataset.dirs))
+  
+  for (ifunc in func.list) {
+    continue.flags = sapply(dataset.dirs[continue.flags == TRUE], ifunc)
+  }
+  
+  return(continue.flags)
+}
 
-# get directories in base dir
-dataset.dirs <- dir(path=base.dir, full.names = TRUE)
-# only directories, please
-dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
 
-sapply(dataset.dirs, make.summary.plots)
 
+apply.data.pipeline(base.dir, list(
+  combine.data.csvs, 
+  make.summary.plots
+))
