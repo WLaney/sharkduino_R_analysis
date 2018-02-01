@@ -1,5 +1,9 @@
 #=============================================================================================
-# DEPRECATED - USE data_pipe.R INSTEAD
+# data_pipe.R
+#=============================================================================================
+# Batch processing of Sharkduino data directories
+# Includes functions for various operations, as well as a way to create data pipelines
+# Written for Sharkduino by Dara Kharabi
 #=============================================================================================
 
 # imports
