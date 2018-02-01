@@ -1,6 +1,6 @@
 # combines csvs and generates plots for all dataset directories in base.dir
 
-source("packages/import_data.R")
+source("packages/data_pipe.R")
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -9,12 +9,7 @@ source("packages/import_data.R")
 #base.dir = "/Users/dara/GDrive - WM/Animal Tag Lab Book/Data"
 base.dir = "/Users/dara/Projects/Sharkduino/testDatasets"
 
-
-# Range of points to plot (set to NA to plot the whole dataset)
-head.dataRange = NA
 # ------------------------------------------------------------------------------
 
-apply.data.pipeline(base.dir, list(
-  combine.data.csvs, 
-  make.summary.plots
-))
+# If you set parallel to TRUE, run from command line, not RStudio
+apply.data.pipeline.mc(base.dir, "list(combine.data.csvs, make.summary.plots)")

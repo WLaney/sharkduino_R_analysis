@@ -11,6 +11,7 @@ require("ggplot2") # for pretty plots
 require("scales") # for better scales
 require("cowplot") 
 require("RcppRoll")
+require("parallel")
 
 source("packages/import_data.R")
 source("packages/combine_csvs.R")
@@ -19,17 +20,44 @@ source("packages/subsample.R")
 #-------------------------------------------------------------------------------------------
 # Helper function to make running series of operations easier
 # Applies all functions in func.list to every data directory in base.dir
+# Only use parallel = TRUE if you're running the code in the console. If you wanna run it
+# in RStudio, use apply.data.pipeline.mc
 
-apply.data.pipeline = function(base.dir, func.list) {
+apply.data.pipeline = function(base.dir, func.list, parallel = FALSE) {
   # get directories in base dir
   dataset.dirs <- dir(path=base.dir, full.names = TRUE)
   # only directories, please
   dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
   
   continue.flags = rep(TRUE, length(dataset.dirs))
+  if (parallel == TRUE) print("using MCLAPPLY")
   
   for (ifunc in func.list) {
-    continue.flags = sapply(dataset.dirs[continue.flags == TRUE], ifunc)
+    if (parallel == TRUE) {
+      continue.flags = as.logical(mclapply(dataset.dirs[continue.flags == TRUE], ifunc))
+    } else {
+      continue.flags = sapply(dataset.dirs[continue.flags == TRUE], ifunc)
+    }
+  }
+  
+  return(continue.flags)
+}
+
+apply.data.pipeline.mc = function(base.dir, func.list) {
+  system2("Rscript", args = c(paste("-e \' source(\"packages/data_pipe.R\"); apply.data.pipeline.mc.do(\"", base.dir, "\", ", func.list, ")\'", sep="")))
+}
+
+apply.data.pipeline.mc.do = function(base.dir, func.list) {
+  # get directories in base dir
+  dataset.dirs <- dir(path=base.dir, full.names = TRUE)
+  # only directories, please
+  dataset.dirs = dataset.dirs[file.info(dataset.dirs)$isdir]
+  
+  continue.flags = rep(TRUE, length(dataset.dirs))
+  print("using MCLAPPLY")
+  
+  for (ifunc in func.list) {
+    continue.flags = as.logical(mclapply(dataset.dirs[continue.flags == TRUE], ifunc))
   }
   
   return(continue.flags)
@@ -80,7 +108,7 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
   if (is.na(dataRange)) {
     dataRange = 1:nrow(data)
   }
-    
+  
   # make list of plots
   plots = lapply(
     1:7, 
@@ -90,9 +118,9 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
     dataRange = dataRange, 
     ssres = ssres
   )
-    
+  
   filename = gsub("/", "", gsub(" ", "_", paste(ds.name, "_summary", sep="")))
-    
+  
   axes = c(
     "ax",
     "ay",
@@ -109,7 +137,7 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
     print("..../plots/ directory doesn't exist. Creating one now.")
     dir.create(plots.dir)
   }
-    
+  
   for (i in 1:7) {
     print(paste("....Saving plot for", axes[i], "axis."))
     ggsave(
@@ -121,7 +149,7 @@ make.summary.plots = function(data.dir, dataRange = NA, ssres = 1) {
       limitsize = FALSE
     )
   }
-    
+  
   print("....All plots saved.")
   
 }
@@ -196,5 +224,3 @@ makeScatterPane = function(ds, data, datasetName = "NO NAME", dataRange = 1:nrow
   
   return(myPlot)
 }
-
-
