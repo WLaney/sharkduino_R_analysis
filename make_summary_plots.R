@@ -9,7 +9,13 @@ source("packages/data_pipe.R")
 #base.dir = "/Users/dara/GDrive - WM/Animal Tag Lab Book/Data"
 base.dir = "/Users/dara/Projects/Sharkduino/testDatasets"
 
+# Run in parallelized mode? (faster)
+multicore = FALSE
 # ------------------------------------------------------------------------------
 
-# If you set parallel to TRUE, run from command line, not RStudio
-apply.data.pipeline.mc(base.dir, "list(combine.data.csvs, make.summary.plots)")
+if (multicore == TRUE) {
+  apply.data.pipeline.mc(base.dir, "list(combine.data.csvs, make.summary.plots)")
+} else {
+  apply.data.pipeline(base.dir, list(combine.data.csvs, make.summary.plots))
+}
+
