@@ -66,21 +66,21 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
       # Remove any remaining time rows
       interp.data = interp.data[!is.na(ax)]
     }
-  }
+  
 
-  # Throw warning if more than 10 seconds of uninterpolated data.
-  if (nrow(interp.data[is.na(date_time)]) > 250) {
-    print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(interp.data[is.na(date_time)]), ").", sep = ""))
-  }
-  # Delete rows with no valid date interp.
-  interp.data = interp.data[!is.na(date_time)]
+    # Throw warning if more than 10 seconds of uninterpolated data.
+    if (nrow(interp.data[is.na(date_time)]) > 250) {
+      print(paste("WARNING: Unexpected number of rows with missing dates - (", nrow(interp.data[is.na(date_time)]), ").", sep = ""))
+    }
+    # Delete rows with no valid date interp.
+    interp.data = interp.data[!is.na(date_time)]
+    
+    # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
+    # separate files for them.
+    pos.data = interp.data[,1:7]
+    
   
-  # Throw out empty temp/pressure rows. Later, when we get these sensors, we'll output 
-  # separate files for them.
-  pos.data = interp.data[,1:7]
-  
-  # Process gyro data by tag series (if necessary)
-  if (clean == FALSE) {
+    # Process gyro data by tag series (if necessary)
     if (legacy == TRUE) {
       # Throw away bad gyro data from v1.x tags
       pos.data = pos.data[,c(1,2,3,7)]
@@ -93,7 +93,7 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
   
       
       # check if gyro data has missing rows
-      # this code is experimental - TODO: test more thoroughly
+      # this code is experimental - revisit if re revisit sparse gyro reads
       if (anyNA(interp.data[,4:6])) {
         print("WARNING: Sparse gyro data detected. Linearly interpolating gyro reads (this may affect data quality).")
         
@@ -114,6 +114,8 @@ import_data <- function(data_file, save_csv = FALSE, save_rdata = FALSE, legacy 
         pos.data = pos.data[!is.na(gx) & !is.na(gy) & !is.na(gz)]
       }
     }
+  } else {
+    pos.data = raw.data
   }
   
   # Warn if processed data.table is empty
